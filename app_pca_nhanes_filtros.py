@@ -55,7 +55,12 @@ st.dataframe(df.head())
 categorical_cols = ["AgeGroup", "Sex", "Race and Hispanic origin", "Education", "Marital Status"]
 numerical_cols = ["Sample Size", "Prevalence", "Standard Error", "95% CI Lower", "95% CI Upper"]
 
-df = df.dropna(subset=numerical_cols + categorical_cols + ["Condition"])
+# Asegurarse de que las columnas existen en el DataFrame
+subset_cols = numerical_cols + categorical_cols + ["Condition"]
+subset_cols = [col for col in subset_cols if col in df.columns]
+
+# Luego aplicar dropna solo a las columnas que existen
+df = df.dropna(subset=subset_cols)
 
 # Encode target variable
 target = "Condition"
