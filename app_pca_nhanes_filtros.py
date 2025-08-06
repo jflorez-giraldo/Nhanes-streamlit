@@ -79,15 +79,18 @@ y = df[target]
 
 # --- PCA Pipeline ---
 st.subheader("PCA (Numerical Features)")
-# Pipeline completo con IterativeImputer
-pca_pipeline = ImbPipeline([
-    ("imputer", SimpleImputer()),
+# Pipeline hasta el balanceo
+balance_pipeline = ImbPipeline([
+    ("imputer", IterativeImputer(random_state=42)),
     ("scaler", StandardScaler()),
-    ("adasyn", ADASYN(random_state=42)),
-    ("pca", PCA(n_components=2))
+    ("adasyn", ADASYN(random_state=42))
 ])
 
-X_pca, y_balanced = pca_pipeline.fit_resample(X_num, y)
+X_balanced, y_balanced = balance_pipeline.fit_resample(X_num, y)
+
+# PCA por separado
+pca = PCA(n_components=2)
+X_pca = pca.fit_transform(X_balanced)
 
 fig1, ax1 = plt.subplots()
 scatter = ax1.scatter(X_pca[:, 0], X_pca[:, 1], c=y_balanced, cmap="viridis", alpha=0.6)
