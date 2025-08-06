@@ -46,10 +46,10 @@ if "Sex" in df.columns:
     sex = st.sidebar.selectbox("Select Sex", sorted(df["Sex"].dropna().unique()))
     df = df[df["Sex"] == sex]
 
-if "Condition" in df.columns:
-    selected_conditions = st.sidebar.multiselect("Select Condition(s)", sorted(df["Condition"].dropna().unique()))
+if "Measure" in df.columns:
+    selected_conditions = st.sidebar.multiselect("Select Condition(s)", sorted(df["Measure"].dropna().unique()))
     if selected_conditions:
-        df = df[df["Condition"].isin(selected_conditions)]
+        df = df[df["Measure"].isin(selected_conditions)]
 
 st.subheader("Filtered Dataset")
 st.dataframe(df.head())
@@ -66,7 +66,7 @@ subset_cols = [col for col in subset_cols if col in df.columns]
 df = df.dropna(subset=subset_cols)
 
 # Encode target variable
-target = "Condition"
+target = "Measure"
 le = LabelEncoder()
 df[target] = le.fit_transform(df[target])
 
