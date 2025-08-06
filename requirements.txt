@@ -1,8 +1,8 @@
+streamlit
 pandas
 numpy
 scikit-learn==1.3.2
+imblearn
 matplotlib
 seaborn
-streamlit
-prince
-imblearn
+prince==0.11.4
