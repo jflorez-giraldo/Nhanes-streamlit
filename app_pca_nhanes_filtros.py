@@ -31,8 +31,6 @@ def load_data():
 
 df = load_data()
 
-# Simulate NHANES-like data for demonstration
-df = pd.read_csv("https://raw.githubusercontent.com/jbrownlee/Datasets/master/pima-indians-diabetes.data.csv", header=None)
 df.columns = ["Pregnancies", "Glucose", "BloodPressure", "SkinThickness", "Insulin", 
               "BMI", "DiabetesPedigreeFunction", "Age", "Outcome"]
 
