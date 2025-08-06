@@ -25,7 +25,7 @@ st.title("PCA, MCA and Feature Selection on NHANES Data")
 # Load dataset
 @st.cache_data
 def load_data():
-    url = "https://raw.githubusercontent.com/jflorez-giraldo/Nhanes-streamlit/refs/heads/main/NHANES_Select_Chronic_Conditions_Prevalence_Estimates.csv"
+    url = "https://raw.githubusercontent.com/jflorez-giraldo/Nhanes-streamlit/main/NHANES_Select_Chronic_Conditions_Prevalence_Estimates.csv"
     df = pd.read_csv(url)
     return df
 
