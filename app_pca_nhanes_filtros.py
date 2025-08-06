@@ -81,19 +81,25 @@ fig1, ax1 = plt.subplots()
 scatter = ax1.scatter(X_pca[:, 0], X_pca[:, 1], c=y_balanced, cmap="viridis", alpha=0.6)
 ax1.set_xlabel("PCA 1")
 ax1.set_ylabel("PCA 2")
-ax1.set_title("PCA with Preprocessing + SMOTE")
+ax1.set_title("PCA with Preprocessing + ADASYN")
 legend1 = ax1.legend(*scatter.legend_elements(), title="Condition")
 ax1.add_artist(legend1)
 st.pyplot(fig1)
 
 # --- MCA Pipeline ---
 st.subheader("MCA (Categorical Features)")
-df_cat = df[categorical_cols].astype("category")
-mca = mca.MCA(n_components=2, random_state=42)
-mca_result = mca.fit(df_cat).row_coordinates(df_cat)
 
+df_cat = df[categorical_cols].astype("category")
+
+# Renombrar la instancia para no sobrescribir el módulo
+mca_model = mca.MCA(df_cat)
+
+# Extraer coordenadas
+mca_coords = mca_model.fs_r(N=2)
+
+# Gráfica
 fig2, ax2 = plt.subplots()
-ax2.scatter(mca_result[0], mca_result[1], alpha=0.5)
+ax2.scatter(mca_coords[:, 0], mca_coords[:, 1], alpha=0.5)
 ax2.set_xlabel("MCA 1")
 ax2.set_ylabel("MCA 2")
 ax2.set_title("MCA on Categorical Features")
