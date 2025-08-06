@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import prince
 
-from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import StandardScaler, LabelEncoder
 from sklearn.impute import SimpleImputer
 from sklearn.decomposition import PCA
 from sklearn.feature_selection import RFE
@@ -15,14 +15,11 @@ from imblearn.pipeline import Pipeline as ImbPipeline
 from imblearn.over_sampling import SMOTE
 from sklearn.ensemble import RandomForestClassifier
 
-from sklearn.compose import ColumnTransformer
-import prince
-
-# Streamlit page config
+# Streamlit config
 st.set_page_config(page_title="PCA and MCA on NHANES", layout="wide")
 st.title("PCA, MCA and Feature Selection on NHANES Data")
 
-# Load dataset
+# Load dataset from GitHub
 @st.cache_data
 def load_data():
     url = "https://raw.githubusercontent.com/jflorez-giraldo/Nhanes-streamlit/main/NHANES_Select_Chronic_Conditions_Prevalence_Estimates.csv"
@@ -30,58 +27,66 @@ def load_data():
     return df
 
 df = load_data()
+st.write("Original dataset shape:", df.shape)
 
-df.columns = ["Pregnancies", "Glucose", "BloodPressure", "SkinThickness", "Insulin", 
-              "BMI", "DiabetesPedigreeFunction", "Age", "Outcome"]
-
+# Sidebar filters
 st.sidebar.header("Filter data")
-age_min, age_max = st.sidebar.slider("Age range", int(df["Age"].min()), int(df["Age"].max()), 
-                                     (int(df["Age"].min()), int(df["Age"].max())))
-glucose_min, glucose_max = st.sidebar.slider("Glucose range", int(df["Glucose"].min()), int(df["Glucose"].max()), 
-                                             (int(df["Glucose"].min()), int(df["Glucose"].max())))
 
-filtered_df = df[(df["Age"] >= age_min) & (df["Age"] <= age_max) & 
-                 (df["Glucose"] >= glucose_min) & (df["Glucose"] <= glucose_max)]
+if "AgeGroup" in df.columns:
+    age_group = st.sidebar.selectbox("Select Age Group", sorted(df["AgeGroup"].dropna().unique()))
+    df = df[df["AgeGroup"] == age_group]
+
+if "Sex" in df.columns:
+    sex = st.sidebar.selectbox("Select Sex", sorted(df["Sex"].dropna().unique()))
+    df = df[df["Sex"] == sex]
+
+if "Condition" in df.columns:
+    selected_conditions = st.sidebar.multiselect("Select Condition(s)", sorted(df["Condition"].dropna().unique()))
+    if selected_conditions:
+        df = df[df["Condition"].isin(selected_conditions)]
 
 st.subheader("Filtered Dataset")
-st.dataframe(filtered_df.head())
+st.dataframe(df.head())
 
-# Features and Target
-features = ["Pregnancies", "Glucose", "BloodPressure", "SkinThickness", "Insulin", 
-            "BMI", "DiabetesPedigreeFunction", "Age"]
-target = "Outcome"
+# Preprocess
+categorical_cols = ["AgeGroup", "Sex", "Race and Hispanic origin", "Education", "Marital Status"]
+numerical_cols = ["Sample Size", "Prevalence", "Standard Error", "95% CI Lower", "95% CI Upper"]
 
-X = filtered_df[features]
-y = filtered_df[target]
+df = df.dropna(subset=numerical_cols + categorical_cols + ["Condition"])
 
-# --- Pipeline with Scaling, Imputation, SMOTE, PCA ---
-pca_pipeline = ImbPipeline(steps=[
-    ('imputer', SimpleImputer(strategy='mean')),
-    ('scaler', StandardScaler()),
-    ('smote', SMOTE(random_state=42)),
-    ('pca', PCA(n_components=2))
+# Encode target variable
+target = "Condition"
+le = LabelEncoder()
+df[target] = le.fit_transform(df[target])
+
+X_num = df[numerical_cols]
+y = df[target]
+
+# --- PCA Pipeline ---
+st.subheader("PCA (Numerical Features)")
+pca_pipeline = ImbPipeline([
+    ("imputer", SimpleImputer(strategy="mean")),
+    ("scaler", StandardScaler()),
+    ("smote", SMOTE(random_state=42)),
+    ("pca", PCA(n_components=2))
 ])
 
-X_pca, y_balanced = pca_pipeline.fit_resample(X, y)
+X_pca, y_balanced = pca_pipeline.fit_resample(X_num, y)
 
-# Plot PCA
-st.subheader("PCA (with SMOTE and preprocessing)")
 fig1, ax1 = plt.subplots()
-scatter = ax1.scatter(X_pca[:, 0], X_pca[:, 1], c=y_balanced, cmap='viridis', alpha=0.6)
-legend = ax1.legend(*scatter.legend_elements(), title="Classes")
-ax1.add_artist(legend)
+scatter = ax1.scatter(X_pca[:, 0], X_pca[:, 1], c=y_balanced, cmap="viridis", alpha=0.6)
 ax1.set_xlabel("PCA 1")
 ax1.set_ylabel("PCA 2")
 ax1.set_title("PCA with Preprocessing + SMOTE")
+legend1 = ax1.legend(*scatter.legend_elements(), title="Condition")
+ax1.add_artist(legend1)
 st.pyplot(fig1)
 
 # --- MCA Pipeline ---
-st.subheader("Multiple Correspondence Analysis (MCA)")
-mca_cols = ["Pregnancies", "Outcome"]
-df_mca = filtered_df[mca_cols].astype("category")
-
+st.subheader("MCA (Categorical Features)")
+df_cat = df[categorical_cols].astype("category")
 mca = prince.MCA(n_components=2, random_state=42)
-mca_result = mca.fit(df_mca).row_coordinates(df_mca)
+mca_result = mca.fit(df_cat).row_coordinates(df_cat)
 
 fig2, ax2 = plt.subplots()
 ax2.scatter(mca_result[0], mca_result[1], alpha=0.5)
@@ -93,39 +98,48 @@ st.pyplot(fig2)
 # --- Feature Importance ---
 st.subheader("Feature Importance (Random Forest)")
 rf = RandomForestClassifier(n_estimators=100, random_state=42)
-rf.fit(X, y)
-
+rf.fit(X_num, y)
 importances = rf.feature_importances_
-importance_df = pd.DataFrame({"Feature": features, "Importance": importances})
-importance_df = importance_df.sort_values("Importance", ascending=False)
+
+importance_df = pd.DataFrame({
+    "Feature": numerical_cols,
+    "Importance": importances
+}).sort_values("Importance", ascending=False)
 
 fig3, ax3 = plt.subplots()
 sns.barplot(data=importance_df, x="Importance", y="Feature", ax=ax3)
-ax3.set_title("Feature Importance from Random Forest")
+ax3.set_title("Feature Importance")
 st.pyplot(fig3)
 
-# --- Correlation Filtering ---
-st.subheader("Correlation-based Filtering")
-correlations = [np.corrcoef(filtered_df[feature], filtered_df[target])[0, 1] for feature in features]
-corr_df = pd.DataFrame({"Feature": features, "Abs Correlation": np.abs(correlations)})
-corr_df = corr_df.sort_values("Abs Correlation", ascending=False)
+# --- Correlation Filter ---
+st.subheader("Correlation with Target")
+correlations = [np.corrcoef(X_num[col], y)[0, 1] for col in numerical_cols]
+corr_df = pd.DataFrame({
+    "Feature": numerical_cols,
+    "Abs Correlation": np.abs(correlations)
+}).sort_values("Abs Correlation", ascending=False)
 
 fig4, ax4 = plt.subplots()
 sns.barplot(data=corr_df, x="Abs Correlation", y="Feature", ax=ax4)
-ax4.set_title("Absolute Correlation with Target")
+ax4.set_title("Absolute Correlation with Condition")
 st.pyplot(fig4)
 
-# --- Wrapper Method (RFE) ---
-st.subheader("Wrapper Method: Recursive Feature Elimination (RFE)")
-rfe_pipeline = Pipeline([
-    ("imputer", SimpleImputer(strategy="mean")),
+# --- Wrapper: RFE ---
+st.subheader("Recursive Feature Elimination (RFE)")
+rfe_pipe = Pipeline([
+    ("imputer", SimpleImputer()),
     ("scaler", StandardScaler()),
-    ("rfe", RFE(estimator=LogisticRegression(max_iter=1000), n_features_to_select=5))
+    ("rfe", RFE(LogisticRegression(max_iter=1000), n_features_to_select=3))
 ])
 
-rfe_pipeline.fit(X, y)
-rfe_mask = rfe_pipeline.named_steps["rfe"].support_
-rfe_ranking = rfe_pipeline.named_steps["rfe"].ranking_
+rfe_pipe.fit(X_num, y)
+rfe_selected = rfe_pipe.named_steps["rfe"].support_
+rfe_ranking = rfe_pipe.named_steps["rfe"].ranking_
 
-rfe_df = pd.DataFrame({"Feature": features, "Selected": rfe_mask, "Ranking": rfe_ranking})
+rfe_df = pd.DataFrame({
+    "Feature": numerical_cols,
+    "Selected": rfe_selected,
+    "Ranking": rfe_ranking
+})
 st.dataframe(rfe_df.sort_values("Ranking"))
+
