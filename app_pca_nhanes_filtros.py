@@ -14,6 +14,9 @@ from sklearn.pipeline import Pipeline
 from imblearn.pipeline import Pipeline as ImbPipeline
 from imblearn.over_sampling import SMOTE
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.experimental import enable_iterative_imputer  # Necesario para activar IterativeImputer
+from sklearn.impute import IterativeImputer
+from imblearn.over_sampling import ADASYN
 
 # Streamlit config
 st.set_page_config(page_title="PCA and MCA on NHANES", layout="wide")
@@ -64,10 +67,11 @@ y = df[target]
 
 # --- PCA Pipeline ---
 st.subheader("PCA (Numerical Features)")
+# Pipeline completo con IterativeImputer
 pca_pipeline = ImbPipeline([
-    ("imputer", SimpleImputer(strategy="mean")),
+    ("imputer", IterativeImputer(random_state=42)),
     ("scaler", StandardScaler()),
-    ("smote", SMOTE(random_state=42)),
+    ("adasyn", ADASYN(random_state=42)),
     ("pca", PCA(n_components=2))
 ])
 
