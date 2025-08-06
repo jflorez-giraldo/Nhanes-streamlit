@@ -1,8 +1,6 @@
-streamlit
-pandas
-numpy
+streamlit==1.29.0
+pandas==2.1.4
+numpy==1.24.4
 scikit-learn==1.3.2
-imblearn
-matplotlib
-seaborn
+imblearn==0.11.0
 prince==0.11.4
