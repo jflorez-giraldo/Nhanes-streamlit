@@ -5,4 +5,4 @@ scikit-learn==1.3.2
 imblearn
 matplotlib
 seaborn
-prince==0.11.4
+prince==0.12.0
