@@ -32,6 +32,9 @@ def load_data():
 df = load_data()
 st.write("Original dataset shape:", df.shape)
 
+st.write("Columnas disponibles en el DataFrame:")
+st.write(df.columns.tolist())
+
 # Sidebar filters
 st.sidebar.header("Filter data")
 
