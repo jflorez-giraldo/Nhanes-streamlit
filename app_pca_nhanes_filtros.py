@@ -81,7 +81,7 @@ y = df[target]
 st.subheader("PCA (Numerical Features)")
 # Pipeline completo con IterativeImputer
 pca_pipeline = ImbPipeline([
-    ("imputer", SimpleImputer(random_state=42)),
+    ("imputer", SimpleImputer()),
     ("scaler", StandardScaler()),
     ("adasyn", ADASYN(random_state=42)),
     ("pca", PCA(n_components=2))
