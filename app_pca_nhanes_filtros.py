@@ -3,7 +3,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
-import prince
+import mca
 
 from sklearn.preprocessing import StandardScaler, LabelEncoder
 from sklearn.impute import SimpleImputer
@@ -89,7 +89,7 @@ st.pyplot(fig1)
 # --- MCA Pipeline ---
 st.subheader("MCA (Categorical Features)")
 df_cat = df[categorical_cols].astype("category")
-mca = prince.MCA(n_components=2, random_state=42)
+mca = mca.MCA(n_components=2, random_state=42)
 mca_result = mca.fit(df_cat).row_coordinates(df_cat)
 
 fig2, ax2 = plt.subplots()
