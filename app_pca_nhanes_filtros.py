@@ -54,12 +54,16 @@ if "Measure" in df.columns:
 st.subheader("Filtered Dataset")
 st.dataframe(df.head())
 
-# Preprocess
-categorical_cols = ["AgeGroup", "Sex", "Race and Hispanic origin", "Education", "Marital Status"]
-numerical_cols = ["Sample Size", "Prevalence", "Standard Error", "95% CI Lower", "95% CI Upper"]
+# Selección de columnas categóricas y numéricas reales
+categorical_cols = ["Survey Years", "Sex", "Age Group", "Race and Hispanic Origin"]
+numerical_cols = ["Percent", "Standard Error", "Lower 95% CI Limit", "Upper 95% CI Limit"]
+
+# Convertir columnas numéricas a tipo numérico
+for col in numerical_cols:
+    df[col] = pd.to_numeric(df[col], errors='coerce')
 
 # Asegurarse de que las columnas existen en el DataFrame
-subset_cols = numerical_cols + categorical_cols + ["Condition"]
+subset_cols = numerical_cols + categorical_cols + [target]
 subset_cols = [col for col in subset_cols if col in df.columns]
 
 # Luego aplicar dropna solo a las columnas que existen
