@@ -63,7 +63,7 @@ for col in numerical_cols:
     df[col] = pd.to_numeric(df[col], errors='coerce')
 
 # Asegurarse de que las columnas existen en el DataFrame
-subset_cols = numerical_cols + categorical_cols + [target]
+subset_cols = numerical_cols + categorical_cols + ["Measure"]
 subset_cols = [col for col in subset_cols if col in df.columns]
 
 # Luego aplicar dropna solo a las columnas que existen
