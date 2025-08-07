@@ -297,50 +297,52 @@ sns.heatmap(loadings_df_sorted, annot=True, cmap="coolwarm", center=0, ax=ax)
 st.pyplot(fig)
 
 class MCA_Transformer(BaseEstimator, TransformerMixin):
-    def __init__(self, n_components=2):
-        self.n_components = n_components
-        self.imputer = SimpleImputer(strategy='most_frequent')
-        self.encoder = OneHotEncoder(handle_unknown='ignore', sparse=False)
+    def __init__(self):
+        self.imputer = SimpleImputer(strategy="most_frequent")
+        self.encoder = OneHotEncoder(sparse_output=False, handle_unknown="ignore")
         self.mca_result_ = None
         self.columns_ = None
 
     def fit(self, X, y=None):
+        # Imputación
         X_imputed = self.imputer.fit_transform(X)
+
+        # Codificación one-hot
         X_encoded = self.encoder.fit_transform(X_imputed)
         self.columns_ = self.encoder.get_feature_names_out(X.columns)
 
+        # Convertir a DataFrame con nombres de columnas
         df_encoded = pd.DataFrame(X_encoded, columns=self.columns_)
-        self.mca_result_ = MCA(df_encoded)  # Sin ncols
+
+        # MCA con la librería 'mca'
+        self.mca_result_ = mca.MCA(df_encoded, ncols=len(df_encoded.columns))
+
         return self
 
     def transform(self, X):
         X_imputed = self.imputer.transform(X)
         X_encoded = self.encoder.transform(X_imputed)
         df_encoded = pd.DataFrame(X_encoded, columns=self.columns_)
-
-        coords = self.mca_result_.fs_r(N=self.n_components)  # Limitar componentes aquí
-        return coords
-
-    def get_mca(self):
-        return self.mca_result_
+        return self.mca_result_.fs_r(N=df_encoded.shape[0])  # Coordenadas de filas
 
     def get_column_coords(self):
         coords = pd.DataFrame(
-            self.mca_result_.fs_r(),
-            columns=[f"Dim{i+1}" for i in range(self.mca_result_.fs_r().shape[1])],
+            self.mca_result_.cols,
+            columns=[f"Dim{i+1}" for i in range(self.mca_result_.cols.shape[1])],
             index=self.columns_
         )
         return coords
 
 
 categorical_pipeline = Pipeline([
-    ("mca", MCA_Transformer(n_components=6))
+    ("mca", MCA_Transformer())
 ])
 
+# Fit y transform
 X_cat_mca = categorical_pipeline.fit_transform(X_cat)
-mca_model = categorical_pipeline.named_steps["mca"]
 
-# Coordenadas de las columnas (variables)
+# Obtener coordenadas de las variables después del ajuste
+mca_model = categorical_pipeline.named_steps['mca']
 coords = mca_model.get_column_coords()
 
 # Ordenar por importancia en la primera dimensión
