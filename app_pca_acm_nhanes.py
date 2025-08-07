@@ -325,7 +325,12 @@ class MCA_Transformer(BaseEstimator, TransformerMixin):
         return self.mca_result_
 
     def get_column_coords(self):
-        return self.mca_result_.fs_r()
+        coords = pd.DataFrame(
+            self.mca_result_.fs_r(),
+            columns=[f"Dim{i+1}" for i in range(self.mca_result_.fs_r().shape[1])],
+            index=self.columns_
+        )
+        return coords
 
 
 categorical_pipeline = Pipeline([
