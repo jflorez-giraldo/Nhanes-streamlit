@@ -299,64 +299,63 @@ class MCA_Transformer(BaseEstimator, TransformerMixin):
     def __init__(self, n_components=6):
         self.n_components = n_components
         self.mca_result_ = None
-        self.columns_ = None
+        self.cols_ = None
 
     def fit(self, X, y=None):
-        # Convertir a DataFrame si no lo es
         if not isinstance(X, pd.DataFrame):
             X = pd.DataFrame(X)
-        self.columns_ = X.columns
+        self.cols_ = X.columns
         self.mca_result_ = mca.MCA(X)
         return self
 
     def transform(self, X):
-        if not isinstance(X, pd.DataFrame):
-            X = pd.DataFrame(X, columns=self.columns_)
-        return self.mca_result_.fs_r(N=self.n_components)  # Coordenadas principales
+        return self.mca_result_.fs_r(N=self.n_components)
 
     def get_mca(self):
         return self.mca_result_
 
 categorical_pipeline = Pipeline(steps=[
     ("imputer", SimpleImputer(strategy="most_frequent")),
-    ("encoder", OneHotEncoder(handle_unknown="ignore", sparse_output=False)),
-    ("pca", PCA(n_components=6))
+    ("encoder", OneHotEncoder(sparse_output=False, handle_unknown="ignore")),
+    ("mca", MCA_Transformer(n_components=6))
 ])
 
-# Fit + transform para datos categóricos
-X_cat_pca = categorical_pipeline.fit_transform(X_cat)
+# One-hot encoding + MCA
+X_cat_mca = categorical_pipeline.fit_transform(X_cat)
 
-# Obtener los nombres de las variables one-hot
-encoder = categorical_pipeline.named_steps["encoder"]
-encoded_col_names = encoder.get_feature_names_out(X_cat.columns)
-X_encoded_df = pd.DataFrame(
-    encoder.transform(categorical_pipeline.named_steps["imputer"].transform(X_cat)),
-    columns=encoded_col_names
-)
+# Extraer el modelo MCA para graficar
+mca_result = categorical_pipeline.named_steps["mca"].get_mca()
 
-# Obtener el modelo PCA
-pca_model = categorical_pipeline.named_steps["pca"]
-
-# Coordenadas de las columnas (loadings)
+# Coordenadas de variables (columnas one-hot codificadas)
 coords = pd.DataFrame(
-    pca_model.components_.T,
-    columns=[f"Dim{i+1}" for i in range(pca_model.n_components_)],
-    index=encoded_col_names
+    mca_result.cols,
+    columns=[f"Dim{i+1}" for i in range(len(mca_result.L))]
 )
 
-# Ordenar por contribución en Dim1
+# Obtener nombres de columnas del one-hot encoding
+encoded_columns = categorical_pipeline.named_steps["encoder"].get_feature_names_out(input_features=X_cat.columns)
+coords.index = encoded_columns
+
+# Heatmap de las coordenadas
+st.subheader("🔍 Heatmap de coordenadas de variables categóricas (MCA)")
+
 coords_sorted = coords.reindex(coords["Dim1"].abs().sort_values(ascending=False).index)
 
-# Visualizar
-import matplotlib.pyplot as plt
-import seaborn as sns
-
-plt.figure(figsize=(10, 8))
+fig, ax = plt.subplots(figsize=(10, 12))
 sns.heatmap(coords_sorted, cmap="coolwarm", center=0, annot=True)
-plt.title("PCA sobre datos categóricos (emulación MCA)")
+plt.title("MCA - Column Coordinates")
 plt.tight_layout()
-plt.show()
+st.pyplot(fig)
 
+mca_df = pd.DataFrame(X_cat_mca, columns=[f"Dim{i+1}" for i in range(X_cat_mca.shape[1])])
+mca_df["Condition"] = y.values
+
+st.subheader("📉 MCA - Dim1 vs Dim2")
+
+fig, ax = plt.subplots(figsize=(8, 6))
+sns.scatterplot(data=mca_df, x="Dim1", y="Dim2", hue="Condition", palette="Set2", alpha=0.8, ax=ax)
+ax.set_title("MCA - Dim1 vs Dim2")
+st.pyplot(fig)
 
 
 
