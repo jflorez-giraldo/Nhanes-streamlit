@@ -20,7 +20,7 @@ st.title("PCA and MCA Analysis with Feature Selection - NHANES")
 
 @st.cache_data
 def load_data():
-    url = "https://raw.githubusercontent.com/jflorez-giraldo/Nhanes-streamlit/nhanes_2015_2016.csv"
+    url = "https://raw.githubusercontent.com/jflorez-giraldo/Nhanes-streamlit/main/nhanes_2015_2016.csv"
     df = pd.read_csv(url)
     df.columns = df.columns.str.strip()
     return df
