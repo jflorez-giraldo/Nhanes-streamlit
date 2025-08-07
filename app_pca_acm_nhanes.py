@@ -247,7 +247,9 @@ object_cols = [
     "Condition"
 ]
 
-df[object_cols] = df[object_cols].astype(str)
+for col in df.select_dtypes(include=["object"]).columns:
+    df[col] = df[col].astype(str).fillna("Missing")
+
 st.subheader("🔍 Column Type Checker")
 
 # Mostrar tipos de datos
