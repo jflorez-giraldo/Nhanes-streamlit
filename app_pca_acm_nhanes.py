@@ -228,6 +228,22 @@ if df.empty:
 st.subheader("Preview of Filtered Data")
 st.dataframe(df.head(10))
 
+# Variable objetivo
+y = df["condition"]
+
+# Detectar variables numéricas y categóricas automáticamente
+numeric_features = df.select_dtypes(include=["float64", "int64"]).columns.tolist()
+categorical_features = df.select_dtypes(include=["object", "category"]).columns.tolist()
+
+# Excluir variable objetivo si quedó en alguna
+if 'condition' in numeric_features:
+    numeric_features.remove('condition')
+if 'condition' in categorical_features:
+    categorical_features.remove('condition')
+
+# Subconjuntos
+X_num = df[numeric_features]
+X_cat = df[categorical_features]
 
 
 
