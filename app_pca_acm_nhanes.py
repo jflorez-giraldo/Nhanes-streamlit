@@ -245,7 +245,9 @@ y = df["Condition"]
 numeric_features = df.select_dtypes(include=["float64", "int64"]).columns.tolist()
 if 'Condition' in numeric_features:
     numeric_features.remove('Condition')
+
 X_num = df[numeric_features]
+X_cat = df[categorical_vars]
 
 # Pipeline con imputación, escalado y PCA
 numeric_pipeline = Pipeline(steps=[
