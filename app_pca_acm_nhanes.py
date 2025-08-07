@@ -115,6 +115,12 @@ st.markdown(f"- **RFE (envoltura):** Accuracy promedio: {score_rfe:.2f}")
 
 st.write("Forma de X_rfe:", X_rfe.shape)
 
+# Convertir X_rfe en DataFrame si es array
+if isinstance(X_rfe, np.ndarray):
+    X_rfe = pd.DataFrame(X_rfe)
+
+# Resetear índice de y para que se alinee con X_rfe
+y = y.reset_index(drop=True)
 
 # PCA
 st.subheader("PCA con Variables Seleccionadas (RFE + SMOTE)")
@@ -123,6 +129,7 @@ pca_pipeline = ImbPipeline([
     ("scaler", StandardScaler()),
     ("pca", PCA(n_components=2))
 ])
+
 try:
     X_pca, y_pca = pca_pipeline.fit_resample(X_rfe, y)
 except ValueError as e:
