@@ -68,9 +68,9 @@ st.sidebar.header("Filters")
 use_grouped = st.sidebar.checkbox("Use grouped conditions", value=True)
 target_col = "ConditionGroup" if use_grouped else "Measure"
 
-age_opts = sorted(df["AgeGroup"].dropna().unique())
-age_filter = st.sidebar.selectbox("Age Group", age_opts)
-df = df[df["AgeGroup"] == age_filter]
+#age_opts = sorted(df["AgeGroup"].dropna().unique())
+#age_filter = st.sidebar.selectbox("Age Group", age_opts)
+#df = df[df["AgeGroup"] == age_filter]
 
 sex_opts = sorted(df["Sex"].dropna().unique())
 sex_filter = st.sidebar.selectbox("Sex", sex_opts)
