@@ -27,6 +27,28 @@ def load_data():
 
 df = load_data()
 
+# Definir función para asignar condición
+def assign_condition(row):
+    # Hipertensión: presión sistólica ≥ 140 o diastólica ≥ 90
+    if (row["BPXSY1"] >= 140 or row["BPXSY2"] >= 140 or 
+        row["BPXDI1"] >= 90 or row["BPXDI2"] >= 90):
+        return "hypertension"
+    # Diabetes simulada: IMC muy alto como proxy (≥30)
+    elif row["BMXBMI"] >= 30:
+        return "diabetes"
+    # Colesterol alto (proxy con cintura abdominal, hombres >102 cm, mujeres >88 cm)
+    elif ((row["RIAGENDR"] == 1 and row["BMXWAIST"] > 102) or 
+          (row["RIAGENDR"] == 2 and row["BMXWAIST"] > 88)):
+        return "high cholesterol"
+    else:
+        return "healthy"
+
+# Crear la nueva columna
+df["condition"] = df.apply(assign_condition, axis=1)
+
+# Verificar distribución
+print(df["condition"].value_counts())
+
 col_map = {
     "SEQN": "Participant ID",
     "ALQ101": "Alcohol Intake - Past 12 months (Q1)",
