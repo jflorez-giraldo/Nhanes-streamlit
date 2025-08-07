@@ -326,57 +326,11 @@ categorical_pipeline = Pipeline(steps=[
 # Suponiendo que X_cat tiene las columnas categóricas originales
 X_cat_mca = categorical_pipeline.fit_transform(X_cat)
 
-def plot_mca_column_coordinates(mca_result, dims=(0, 1), figsize=(8, 6), title="Column Coordinates"):
-    coords = pd.DataFrame(mca_result.cols, columns=['Dim1', 'Dim2'])
-    
-    plt.figure(figsize=figsize)
-    plt.axhline(0, color='gray', lw=1, ls='--')
-    plt.axvline(0, color='gray', lw=1, ls='--')
-    
-    for i, (x, y) in enumerate(zip(coords.iloc[:, dims[0]], coords.iloc[:, dims[1]])):
-        plt.text(x, y, f'V{i+1}', fontsize=9)
-
-    plt.scatter(coords.iloc[:, dims[0]], coords.iloc[:, dims[1]], alpha=0.6)
-    plt.xlabel(f"Dimension {dims[0]+1}")
-    plt.ylabel(f"Dimension {dims[1]+1}")
-    plt.title(title)
-    plt.grid(True)
-    plt.show()
-
-def compute_column_contributions(mca_result):
-    """
-    Retorna las contribuciones relativas de cada variable codificada por dimensión.
-    """
-    col_coords = pd.DataFrame(mca_result.cols)
-    eigenvalues = mca_result.L  # varianzas por dimensión
-
-    # Contribución aproximada: (coord^2 / eigenvalue) * 100
-    contribs = (col_coords ** 2) / eigenvalues
-    contribs = contribs.div(contribs.sum(axis=0), axis=1) * 100  # % contribución
-    contribs.columns = [f"Dim{i+1}" for i in range(contribs.shape[1])]
-    
-    return contribs
-
-def plot_mca_contributions_heatmap(contribs, figsize=(10, 6)):
-    contribs_sorted = contribs.copy()
-    # Ordenar por contribución total
-    contribs_sorted["Total"] = contribs.sum(axis=1)
-    contribs_sorted = contribs_sorted.sort_values("Total", ascending=False).drop(columns="Total")
-    
-    plt.figure(figsize=figsize)
-    sns.heatmap(contribs_sorted, cmap="viridis", annot=True, fmt=".1f")
-    plt.title("Contribuciones de columnas a las dimensiones")
-    plt.xlabel("Dimensión")
-    plt.ylabel("Variable codificada")
-    plt.tight_layout()
-    plt.show()
-
-
 # Extraer el objeto MCA después del pipeline
 mca_result = categorical_pipeline.named_steps["mca"].get_mca()
 
 coords = pd.DataFrame(
-    mca_model.cols,
+    mca_result.cols,
     columns=[f"Dim{i+1}" for i in range(len(mca_model.L))]
 )
 
