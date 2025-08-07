@@ -297,49 +297,34 @@ sns.heatmap(loadings_df_sorted, annot=True, cmap="coolwarm", center=0, ax=ax)
 st.pyplot(fig)
 
 class MCA_Transformer(BaseEstimator, TransformerMixin):
-    def __init__(self):
-        self.imputer = SimpleImputer(strategy="most_frequent")
-        self.encoder = OneHotEncoder(sparse_output=False, handle_unknown="ignore")
-        self.mca_result_ = None
-        self.columns_ = None
+    def __init__(self, n_components=2):
+        self.n_components = n_components
 
     def fit(self, X, y=None):
-        # Imputación
-        X_imputed = self.imputer.fit_transform(X)
-
-        # Codificación one-hot
-        X_encoded = self.encoder.fit_transform(X_imputed)
+        self.encoder = OneHotEncoder(handle_unknown='ignore', sparse=False)
+        X_encoded = self.encoder.fit_transform(X)
         self.columns_ = self.encoder.get_feature_names_out(X.columns)
-
-        # Convertir a DataFrame con nombres de columnas
         df_encoded = pd.DataFrame(X_encoded, columns=self.columns_)
-
-        # MCA con la librería 'mca'
-        self.mca_result_ = MCA(df_encoded)
-
+        self.mca_result_ = mca.MCA(df_encoded)
         return self
 
     def transform(self, X):
-        X_imputed = self.imputer.transform(X)
-        X_encoded = self.encoder.transform(X_imputed)
+        X_encoded = self.encoder.transform(X)
         df_encoded = pd.DataFrame(X_encoded, columns=self.columns_)
-        return self.mca_result_.fs_r(N=df_encoded.shape[0])  # Coordenadas de filas
-
-    def get_column_coords(self):
-        if self.mca_result_ is None:
-            raise ValueError("MCA has not been fitted yet. Call `fit()` first.")
-
-        coords = pd.DataFrame(
-            self.mca_result_.cols,
-            columns=[f"Dim{i+1}" for i in range(self.mca_result_.cols.shape[1])],
-            index=self.columns_
-        )
+        coords = self.mca_result_.fs_r[:, :self.n_components]
         return coords
 
+    def get_column_coords(self):
+        coords = pd.DataFrame(self.mca_result_.fs_c[:, :self.n_components],
+                              columns=[f"Dim{i+1}" for i in range(self.n_components)])
+        coords.index = self.columns_
+        return coords
 
 categorical_pipeline = Pipeline([
-    ("mca", MCA_Transformer())
+    ("imputer", SimpleImputer(strategy="most_frequent")),
+    ("mca", MCA_Transformer(n_components=2))
 ])
+
 
 # Fit y transform
 X_cat_mca = categorical_pipeline.fit_transform(X_cat)
