@@ -313,7 +313,7 @@ class MCA_Transformer(BaseEstimator, TransformerMixin):
         # Guardar nombres de columnas codificadas
         self.columns_ = self.encoder.get_feature_names_out(self.feature_names_in_)
         df_encoded = pd.DataFrame(X_encoded, columns=self.columns_)
-        self.mca_result_ = mca.MCA(df_encoded)
+        self.mca_result_ = MCA(df_encoded)
         return self
 
     def transform(self, X):
@@ -327,6 +327,9 @@ class MCA_Transformer(BaseEstimator, TransformerMixin):
                               columns=[f"Dim{i+1}" for i in range(self.n_components)])
         coords.index = self.columns_
         return coords
+
+# Antes de pasar al pipeline
+assert isinstance(X_cat, pd.DataFrame), "X_cat debe ser un DataFrame"
 
 categorical_pipeline = Pipeline([
     ("imputer", SimpleImputer(strategy="most_frequent")),
