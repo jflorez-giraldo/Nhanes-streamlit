@@ -83,7 +83,9 @@ if df["Condition"].nunique() <= 1:
     st.stop()
 
 # Preparar datos para PCA
-X = df[["Prevalence"]].copy()
+X = df[["Percent", "Survey Years", "Sex", "Age Group", "Race and Hispanic Origin", 
+    "Measure", "Percent", "Standard Error", "Lower 95% CI Limit", 
+    "Upper 95% CI Limit"]].copy()
 y = df["Condition"]
 
 # Pipeline con ADASYN y PCA
