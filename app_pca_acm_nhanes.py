@@ -301,26 +301,34 @@ class MCA_Transformer(BaseEstimator, TransformerMixin):
         self.n_components = n_components
 
     def fit(self, X, y=None):
-        # Asegurar que X es un DataFrame con nombres de columnas
-        if isinstance(X, pd.DataFrame):
-            self.feature_names_in_ = X.columns
-        else:
-            raise ValueError("MCA_Transformer requiere que X sea un DataFrame")
+        # Si es un array, convertirlo a DataFrame con nombres conocidos
+        if not isinstance(X, pd.DataFrame):
+            if hasattr(self, 'feature_names_in_'):
+                X = pd.DataFrame(X, columns=self.feature_names_in_)
+            else:
+                raise ValueError("MCA_Transformer requiere que X sea un DataFrame o debe definirse feature_names_in_ antes.")
 
+        # Guardar los nombres originales de las columnas para usarlos en transform
+        self.feature_names_in_ = X.columns
+
+        # Codificación OneHot
         self.encoder = OneHotEncoder(handle_unknown='ignore', sparse=False)
         X_encoded = self.encoder.fit_transform(X)
-    
-        # Guardar nombres de columnas codificadas
+
+        # Obtener nombres de columnas codificadas
         self.columns_ = self.encoder.get_feature_names_out(self.feature_names_in_)
         df_encoded = pd.DataFrame(X_encoded, columns=self.columns_)
+
+        # Aplicar MCA
         self.mca_result_ = MCA(df_encoded)
         return self
 
     def transform(self, X):
+        if not isinstance(X, pd.DataFrame):
+            X = pd.DataFrame(X, columns=self.feature_names_in_)
         X_encoded = self.encoder.transform(X)
         df_encoded = pd.DataFrame(X_encoded, columns=self.columns_)
-        coords = self.mca_result_.fs_r[:, :self.n_components]
-        return coords
+        return self.mca_result_.fs_r(N=df_encoded.shape[0])
 
     def get_column_coords(self):
         coords = pd.DataFrame(self.mca_result_.fs_c[:, :self.n_components],
