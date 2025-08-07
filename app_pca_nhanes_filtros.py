@@ -19,7 +19,7 @@ st.set_page_config(page_title="PCA NHANES", layout="wide")
 st.title("Análisis PCA y MCA de Condiciones Crónicas - NHANES")
 
 # Cargar datos desde GitHub
-@st.cache_data
+#@st.cache_data
 def load_data():
     url = "https://raw.githubusercontent.com/jfcoz/NHANES-streamlit/main/NHANES_Select_Chronic_Conditions_Prevalence_Estimates.csv"
     df = pd.read_csv(url)
