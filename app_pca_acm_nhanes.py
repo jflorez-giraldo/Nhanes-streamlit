@@ -302,13 +302,21 @@ class MCA_Transformer(BaseEstimator, TransformerMixin):
         self.cols_ = None
 
     def fit(self, X, y=None):
+        # Asegurarse de que X es un DataFrame
         if not isinstance(X, pd.DataFrame):
             X = pd.DataFrame(X)
+
+        # Convertir a enteros si es necesario (OneHotEncoder produce float)
+        X = X.astype(int)
+
         self.cols_ = X.columns
         self.mca_result_ = mca.MCA(X)
         return self
 
     def transform(self, X):
+        if not isinstance(X, pd.DataFrame):
+            X = pd.DataFrame(X)
+        X = X.astype(int)
         return self.mca_result_.fs_r(N=self.n_components)
 
     def get_mca(self):
