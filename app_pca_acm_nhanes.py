@@ -404,70 +404,77 @@ X_df = pd.DataFrame(X, columns=X_columns)
 
 st.header("🔍 Selección de Variables con Validación Cruzada")
 
-# División estratificada del conjunto de datos
+# ============================
+# 1️⃣ Separación estratificada
+# ============================
 X_train, X_test, y_train, y_test = train_test_split(
-    X, y, 
-    test_size=0.2,          # o el porcentaje que desees
-    random_state=42,        # para reproducibilidad
-    stratify=y              # estratificación por clase objetivo
+    X_df, y, test_size=0.2, stratify=y, random_state=42
 )
 
+cv = 5  # número de folds
 
-#cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
-
-# 1. Basada en modelos
+# ============================
+# 2️⃣ Selección basada en modelos
+# ============================
 with st.expander("1️⃣ Selección basada en modelos (Random Forest)"):
     model = RandomForestClassifier(random_state=42)
     model.fit(X_train, y_train)
-    importances = pd.Series(model.feature_importances_, index=X_df.columns).sort_values(ascending=False)
+    importances = pd.Series(model.feature_importances_, index=X_train.columns).sort_values(ascending=False)
 
     st.subheader("Importancia de variables")
     fig, ax = plt.subplots(figsize=(8, 5))
-    sns.barplot(x=importances, y=importances.index, ax=ax)
-    ax.set_title("Importancia de Variables - Random Forest")
+    sns.barplot(x=importances.head(7), y=importances.head(7).index, ax=ax)
+    ax.set_xlabel("Importancia")
+    ax.set_ylabel("Variable")
+    ax.set_title("Top 7 Variables - Random Forest")
     st.pyplot(fig)
 
-    scores = cross_val_score(model, X_df, y, cv=5)
+    scores = cross_val_score(model, X_train, y_train, cv=cv)
     st.write("Precisión promedio (CV):", np.round(scores.mean(), 3))
 
-# 2. Método de filtrado
-with st.expander("2️⃣ Selección por filtrado (SelectKBest - ANOVA F-value)"):
-    k = st.slider("Número de variables a seleccionar", 1, len(X_df.columns), 10)
-    selector = SelectKBest(score_func=f_classif, k=k)
-    selector.fit(X_train, y_train)
-    scores = pd.Series(selector.scores_, index=X_df.columns)
-    selected = scores.sort_values(ascending=False).head(k)
+# ============================
+# 3️⃣ Selección por filtrado
+# ============================
+with st.expander("2️⃣ Selección por filtrado (Chi2 / ANOVA)"):
+    # Usar ANOVA si hay valores negativos o no escalados
+    try:
+        selector = SelectKBest(score_func=chi2, k=7)
+        selector.fit(X_train, y_train)
+        scores_filter = pd.Series(selector.scores_, index=X_train.columns).sort_values(ascending=False)
+    except ValueError:
+        selector = SelectKBest(score_func=f_classif, k=7)
+        selector.fit(X_train, y_train)
+        scores_filter = pd.Series(selector.scores_, index=X_train.columns).sort_values(ascending=False)
 
-    st.subheader("Top variables por F-score")
-    fig2, ax2 = plt.subplots(figsize=(8, 5))
-    sns.barplot(x=selected, y=selected.index, ax=ax2)
-    ax2.set_title("F-score ANOVA")
-    st.pyplot(fig2)
+    st.subheader("Top 7 Variables - Filtrado")
+    fig, ax = plt.subplots(figsize=(8, 5))
+    sns.barplot(x=scores_filter.head(7), y=scores_filter.head(7).index, ax=ax)
+    ax.set_xlabel("Score")
+    ax.set_ylabel("Variable")
+    ax.set_title("Selección por Filtrado")
+    st.pyplot(fig)
 
-    X_selected = selector.transform(X_df)
-    model = LogisticRegression(max_iter=1000)
-    scores = cross_val_score(model, X_selected, y, cv=5)
-    st.write("Precisión promedio (CV):", np.round(scores.mean(), 3))
-
-# 3. Envoltura (RFE)
-with st.expander("3️⃣ Selección por envoltura (RFE - Logistic Regression)"):
-    num_feats = st.slider("Número de variables a seleccionar (RFE)", 1, len(X_df.columns), 5)
-    base_model = LogisticRegression(max_iter=1000)
-    rfe = RFE(estimator=base_model, n_features_to_select=num_feats)
+# ============================
+# 4️⃣ Selección por envoltura
+# ============================
+with st.expander("3️⃣ Selección por envoltura (RFE con Regresión Logística)"):
+    logistic = LogisticRegression(max_iter=500, solver='liblinear')
+    rfe = RFE(estimator=logistic, n_features_to_select=7)
     rfe.fit(X_train, y_train)
-    selected_rfe = X_train.columns[rfe.support_]
+    ranking = pd.Series(rfe.ranking_, index=X_train.columns)
+    selected_features = ranking[ranking == 1].index
 
-    st.subheader("Variables seleccionadas:")
-    st.write(list(selected_rfe))
+    st.subheader("Variables seleccionadas (Top 7)")
+    st.write(selected_features.tolist())
 
-    scores = cross_val_score(base_model, X_df[selected_rfe], y, cv=5)
-    st.write("Precisión promedio (CV):", np.round(scores.mean(), 3))
-
-    st.subheader("Heatmap de correlación entre variables seleccionadas")
-    fig3, ax3 = plt.subplots(figsize=(6, 4))
-    sns.heatmap(X_df[selected_rfe].corr(), annot=True, cmap="coolwarm", ax=ax3)
-    ax3.set_title("Correlación entre variables seleccionadas")
-    st.pyplot(fig3)
+    # Importancia usando coeficientes
+    coefs = pd.Series(logistic.fit(X_train[selected_features], y_train).coef_[0], index=selected_features)
+    fig, ax = plt.subplots(figsize=(8, 5))
+    sns.barplot(x=coefs, y=coefs.index, ax=ax)
+    ax.set_xlabel("Coeficiente")
+    ax.set_ylabel("Variable")
+    ax.set_title("Importancia - RFE")
+    st.pyplot(fig)
 
 
 
