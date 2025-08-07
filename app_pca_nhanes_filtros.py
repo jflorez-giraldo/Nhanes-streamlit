@@ -31,27 +31,12 @@ def load_data():
 
 df = load_data()
 
-# Mostrar columnas disponibles para depuración
-st.write("Columnas disponibles:", df.columns.tolist())
-
-# Verificar columnas críticas
-required_cols = [
-    "Age Group", "Sex", "Race and Hispanic Origin",
-    "Prevalence", "Standard Error", "Lower 95% CI Limit",
-    "Upper 95% CI Limit", "Measure"
-]
-missing_cols = [col for col in required_cols if col not in df.columns]
-if missing_cols:
-    st.error(f"Faltan columnas críticas en el CSV: {missing_cols}")
-    st.stop()
-
-# Renombrar columnas para mantener consistencia
+# Renombrar columnas mínimamente necesarias
 df = df.rename(columns={
     "Age Group": "AgeGroup",
     "Race and Hispanic Origin": "Race and Hispanic origin",
     "Lower 95% CI Limit": "95% CI Lower",
-    "Upper 95% CI Limit": "95% CI Upper",
-    "Percent": "Prevalence"
+    "Upper 95% CI Limit": "95% CI Upper"
 })
 
 st.write("Original dataset shape:", df.shape)
@@ -78,17 +63,13 @@ st.dataframe(df.head())
 # --- Selección de columnas ---
 categorical_cols = ["AgeGroup", "Sex", "Race and Hispanic origin"]
 numerical_cols = ["Percent", "Standard Error", "95% CI Lower", "95% CI Upper"]
-
-# Eliminar filas con valores faltantes
 subset_cols = numerical_cols + categorical_cols + ["Measure"]
 subset_cols = [col for col in subset_cols if col in df.columns]
 df = df.dropna(subset=subset_cols)
 
-# Convertir columnas numéricas
 for col in numerical_cols:
     df[col] = pd.to_numeric(df[col], errors='coerce')
 
-# Codificar variable objetivo
 target = "Measure"
 le = LabelEncoder()
 df[target] = le.fit_transform(df[target])
@@ -98,7 +79,6 @@ y = df[target]
 
 # --- PCA ---
 st.subheader("PCA (Numerical Features)")
-
 pca_pipeline = ImbPipeline([
     ("imputer", IterativeImputer(random_state=42)),
     ("scaler", StandardScaler()),
@@ -119,12 +99,10 @@ if len(np.unique(y)) > 1:
     ax1.add_artist(legend1)
     st.pyplot(fig1)
 else:
-    st.warning("La variable objetivo tiene solo una clase después del filtrado. Se requieren al menos dos clases para aplicar ADASYN y PCA.")
-    X_balanced, y_balanced = None, None
+    st.warning("The selected filters result in only one class in the target variable. PCA and resampling require at least two classes.")
 
 # --- MCA ---
 st.subheader("MCA (Categorical Features)")
-
 df_cat = df[categorical_cols].astype(str)
 mca_model = mca.MCA(df_cat)
 mca_coords = mca_model.fs_r(N=2)
@@ -138,62 +116,50 @@ st.pyplot(fig2)
 
 # --- Feature Importance ---
 st.subheader("Feature Importance (Random Forest)")
+rf = RandomForestClassifier(n_estimators=100, random_state=42)
+rf.fit(X_num, y)
+importances = rf.feature_importances_
 
-if len(np.unique(y)) > 1:
-    rf = RandomForestClassifier(n_estimators=100, random_state=42)
-    rf.fit(X_num, y)
-    importances = rf.feature_importances_
+importance_df = pd.DataFrame({
+    "Feature": numerical_cols,
+    "Importance": importances
+}).sort_values("Importance", ascending=False)
 
-    importance_df = pd.DataFrame({
-        "Feature": numerical_cols,
-        "Importance": importances
-    }).sort_values("Importance", ascending=False)
-
-    fig3, ax3 = plt.subplots()
-    sns.barplot(data=importance_df, x="Importance", y="Feature", ax=ax3)
-    ax3.set_title("Feature Importance")
-    st.pyplot(fig3)
-else:
-    st.warning("Random Forest requiere más de una clase en la variable objetivo.")
+fig3, ax3 = plt.subplots()
+sns.barplot(data=importance_df, x="Importance", y="Feature", ax=ax3)
+ax3.set_title("Feature Importance")
+st.pyplot(fig3)
 
 # --- Correlation with Target ---
 st.subheader("Correlation with Target")
+correlations = [np.corrcoef(X_num[col], y)[0, 1] for col in numerical_cols]
+corr_df = pd.DataFrame({
+    "Feature": numerical_cols,
+    "Abs Correlation": np.abs(correlations)
+}).sort_values("Abs Correlation", ascending=False)
 
-if len(np.unique(y)) > 1:
-    correlations = [np.corrcoef(X_num[col], y)[0, 1] for col in numerical_cols]
-    corr_df = pd.DataFrame({
-        "Feature": numerical_cols,
-        "Abs Correlation": np.abs(correlations)
-    }).sort_values("Abs Correlation", ascending=False)
-
-    fig4, ax4 = plt.subplots()
-    sns.barplot(data=corr_df, x="Abs Correlation", y="Feature", ax=ax4)
-    ax4.set_title("Absolute Correlation with Condition")
-    st.pyplot(fig4)
-else:
-    st.warning("No se puede calcular la correlación con una única clase.")
+fig4, ax4 = plt.subplots()
+sns.barplot(data=corr_df, x="Abs Correlation", y="Feature", ax=ax4)
+ax4.set_title("Absolute Correlation with Condition")
+st.pyplot(fig4)
 
 # --- Recursive Feature Elimination ---
 st.subheader("Recursive Feature Elimination (RFE)")
+rfe_pipe = Pipeline([
+    ("imputer", SimpleImputer()),
+    ("scaler", StandardScaler()),
+    ("rfe", RFE(LogisticRegression(max_iter=1000), n_features_to_select=3))
+])
+rfe_pipe.fit(X_num, y)
+rfe_selected = rfe_pipe.named_steps["rfe"].support_
+rfe_ranking = rfe_pipe.named_steps["rfe"].ranking_
 
-if len(np.unique(y)) > 1:
-    rfe_pipe = Pipeline([
-        ("imputer", SimpleImputer()),
-        ("scaler", StandardScaler()),
-        ("rfe", RFE(LogisticRegression(max_iter=1000), n_features_to_select=3))
-    ])
-    rfe_pipe.fit(X_num, y)
-    rfe_selected = rfe_pipe.named_steps["rfe"].support_
-    rfe_ranking = rfe_pipe.named_steps["rfe"].ranking_
-
-    rfe_df = pd.DataFrame({
-        "Feature": numerical_cols,
-        "Selected": rfe_selected,
-        "Ranking": rfe_ranking
-    })
-    st.dataframe(rfe_df.sort_values("Ranking"))
-else:
-    st.warning("RFE requiere más de una clase en la variable objetivo.")
+rfe_df = pd.DataFrame({
+    "Feature": numerical_cols,
+    "Selected": rfe_selected,
+    "Ranking": rfe_ranking
+})
+st.dataframe(rfe_df.sort_values("Ranking"))
 
 
 
