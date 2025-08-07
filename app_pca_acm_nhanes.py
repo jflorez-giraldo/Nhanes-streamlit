@@ -376,12 +376,20 @@ def plot_mca_contributions_heatmap(contribs, figsize=(10, 6)):
 # Extraer el objeto MCA después del pipeline
 mca_result = categorical_pipeline.named_steps["mca"].get_mca()
 
-# Coordenadas (loadings)
-plot_mca_column_coordinates(mca_result)
+coords = pd.DataFrame(mca_model.cols, columns=[f"Dim{i+1}" for i in range(len(mca_model.L))])
 
-# Contribuciones
-contribs = compute_column_contributions(mca_result)
-plot_mca_contributions_heatmap(contribs)
+plt.figure(figsize=(8, 6))
+plt.scatter(coords["Dim1"], coords["Dim2"])
+for i in range(coords.shape[0]):
+    plt.text(coords.iloc[i, 0], coords.iloc[i, 1], f"V{i+1}", fontsize=9)
+plt.axhline(0, color="gray", linestyle="--")
+plt.axvline(0, color="gray", linestyle="--")
+plt.xlabel("Dim 1")
+plt.ylabel("Dim 2")
+plt.title("MCA Column Coordinates")
+plt.grid(True)
+plt.tight_layout()
+plt.show()
 
 
 
