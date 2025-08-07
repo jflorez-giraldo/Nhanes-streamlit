@@ -229,7 +229,7 @@ st.subheader("Preview of Filtered Data")
 st.dataframe(df.head(10))
 
 # Variable objetivo
-y = df["condition"]
+y = df["Condition"]
 
 # Detectar variables numéricas y categóricas automáticamente
 numeric_features = df.select_dtypes(include=["float64", "int64"]).columns.tolist()
@@ -245,7 +245,13 @@ if 'Condition' in categorical_features:
 X_num = df[numeric_features]
 X_cat = df[categorical_features]
 
+numeric_pipeline = Pipeline(steps=[
+    ("imputer", SimpleImputer(strategy="median")),
+    ("scaler", StandardScaler()),
+    ("pca", PCA(n_components=6))  # Puedes ajustar n_components
+])
 
+X_num_pca = numeric_pipeline.fit_transform(X_num)
 
 
 
