@@ -323,31 +323,39 @@ categorical_pipeline = Pipeline(steps=[
     ("mca", MCA_Transformer(n_components=6))
 ])
 
-# Suponiendo que X_cat tiene las columnas categóricas originales
-X_cat_mca = categorical_pipeline.fit_transform(X_cat)
+# Fit + transform para datos categóricos
+X_cat_pca = categorical_pipeline.fit_transform(X_cat)
 
-# Extraer el objeto MCA después del pipeline
-mca_result = categorical_pipeline.named_steps["mca"].get_mca()
-
-# Obtener coordenadas de columnas (loadings)
-coords = pd.DataFrame(
-    mca_result.cols,
-    columns=[f"Dim{i+1}" for i in range(len(mca_result.L))]
+# Obtener los nombres de las variables one-hot
+encoder = categorical_pipeline.named_steps["encoder"]
+encoded_col_names = encoder.get_feature_names_out(X_cat.columns)
+X_encoded_df = pd.DataFrame(
+    encoder.transform(categorical_pipeline.named_steps["imputer"].transform(X_cat)),
+    columns=encoded_col_names
 )
 
-# Asignar nombres de columnas codificadas
-coords.index = X_encoded_df.columns  # <- Asegúrate que X_encoded_df existe y es correcto
+# Obtener el modelo PCA
+pca_model = categorical_pipeline.named_steps["pca"]
 
-# Ordenar por contribución en la primera dimensión (opcional)
+# Coordenadas de las columnas (loadings)
+coords = pd.DataFrame(
+    pca_model.components_.T,
+    columns=[f"Dim{i+1}" for i in range(pca_model.n_components_)],
+    index=encoded_col_names
+)
+
+# Ordenar por contribución en Dim1
 coords_sorted = coords.reindex(coords["Dim1"].abs().sort_values(ascending=False).index)
 
-# Visualizar con heatmap
+# Visualizar
+import matplotlib.pyplot as plt
+import seaborn as sns
+
 plt.figure(figsize=(10, 8))
 sns.heatmap(coords_sorted, cmap="coolwarm", center=0, annot=True)
-plt.title("MCA - Column Coordinates (loadings)")
+plt.title("PCA sobre datos categóricos (emulación MCA)")
 plt.tight_layout()
 plt.show()
-
 
 
 
