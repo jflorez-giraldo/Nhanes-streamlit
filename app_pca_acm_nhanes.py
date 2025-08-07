@@ -158,30 +158,37 @@ col_map = {
 
 df = df.rename(columns=col_map)
 
-# Mostrar tipos de variables
 st.subheader("Resumen del tipo de variables")
-info_df = pd.DataFrame({
-    "Column": df.columns,
-    "Non-Null Count": df.notnull().sum().values,
-    "Dtype": df.dtypes.values
-})
-st.dataframe(info_df)
+
+# Crear columnas para mostrar info_df y category_df lado a lado
+col1, col2 = st.columns(2)
+
+with col1:
+    st.markdown("**Tipo de Dato y Nulos**")
+    info_df = pd.DataFrame({
+        "Column": df.columns,
+        "Non-Null Count": df.notnull().sum().values,
+        "Dtype": df.dtypes.values
+    })
+    st.dataframe(info_df, use_container_width=True)
 
 # Detección automática de variables categóricas
 categorical_vars = [col for col in df.columns 
                     if df[col].dtype == 'object' or 
                        df[col].nunique() <= 10]
 
-# Crear un DataFrame con las clases únicas por variable
-category_info = []
-for col in categorical_vars:
-    unique_vals = df[col].dropna().unique()
-    category_info.append({
-        "Variable": col,
-        "Unique Classes": ", ".join(map(str, sorted(unique_vals)))
-    })
+with col2:
+    st.markdown("**Variables Categóricas Detectadas**")
+    category_info = []
+    for col in categorical_vars:
+        unique_vals = df[col].dropna().unique()
+        category_info.append({
+            "Variable": col,
+            "Unique Classes": ", ".join(map(str, sorted(unique_vals)))
+        })
 
-category_df = pd.DataFrame(category_info)
+    category_df = pd.DataFrame(category_info)
+    st.dataframe(category_df, use_container_width=True)
 
 
 # Filtros
