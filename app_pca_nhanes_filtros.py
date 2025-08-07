@@ -91,7 +91,11 @@ balance_pipeline = ImbPipeline([
     ("adasyn", ADASYN(random_state=42))
 ])
 
-X_balanced, y_balanced = balance_pipeline.fit_resample(X_num, y)
+if len(np.unique(y)) > 1:
+    X_pca, y_balanced = pca_pipeline.fit_resample(X_num, y)
+else:
+    st.warning("The selected filters result in only one class in the target variable. PCA and resampling require at least two classes.")
+    X_pca, y_balanced = None, None
 
 pca = PCA(n_components=2)
 X_pca = pca.fit_transform(X_balanced)
