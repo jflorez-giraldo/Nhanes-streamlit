@@ -268,15 +268,28 @@ ax.set_xlabel("PC1")
 ax.set_ylabel("PC2")
 st.pyplot(fig)
 
-# Heatmap de cargas
-st.subheader("Heatmap de cargas de componentes principales")
-pca_model = numeric_pipeline.named_steps["pca"]
-loadings = pd.DataFrame(pca_model.components_[:6], columns=X_num.columns, index=[f"PC{i+1}" for i in range(6)])
+# Obtener los loadings del PCA (componentes * características)
+loadings = numeric_pipeline.named_steps["pca"].components_
 
-fig2, ax2 = plt.subplots(figsize=(10, 6))
-sns.heatmap(loadings, cmap="coolwarm", center=0, annot=True, fmt=".2f", ax=ax2)
-ax2.set_title("Heatmap de PCA Loadings (Primeros 6 Componentes)")
-st.pyplot(fig2)
+# Convertir a DataFrame con nombres de columnas
+loadings_df = pd.DataFrame(
+    loadings,
+    columns=X_num.columns,
+    index=[f"PC{i+1}" for i in range(loadings.shape[0])]
+).T  # Transponer para que columnas sean PCs y filas las variables
+
+# Ordenar las filas por la importancia de la variable en la suma de cuadrados de los componentes
+# Esto agrupa por aquellas variables con mayor contribución total
+loading_magnitude = (loadings_df**2).sum(axis=1)
+loadings_df["Importance"] = loading_magnitude
+loadings_df_sorted = loadings_df.sort_values(by="Importance", ascending=False).drop(columns="Importance")
+
+# Graficar heatmap ordenado
+st.subheader("🔍 Heatmap de Loadings del PCA (Componentes Principales)")
+
+fig, ax = plt.subplots(figsize=(10, 12))
+sns.heatmap(loadings_df_sorted, annot=True, cmap="coolwarm", center=0, ax=ax)
+st.pyplot(fig)
 
 
 
