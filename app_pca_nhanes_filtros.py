@@ -108,7 +108,7 @@ st.pyplot(fig1)
 # --- MCA ---
 st.subheader("MCA (Categorical Features)")
 
-df_cat = df[categorical_cols].astype("category")
+df_cat = df[categorical_cols].astype(str)
 mca_model = mca.MCA(df_cat)
 mca_coords = mca_model.fs_r(N=2)
 
