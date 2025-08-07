@@ -412,8 +412,17 @@ st.header("🔍 Selección de Variables con Validación Cruzada")
 # ============================
 # 1️⃣ Separación estratificada
 # ============================
+# Separar variables predictoras y objetivo ANTES de codificar
+X = df.drop(columns=["condition"])  # quitar la variable objetivo
+y = df["condition"]
+
+# Codificar sólo X
+X_encoded = pd.get_dummies(X, drop_first=True)
+
+# Luego separar train/test
+from sklearn.model_selection import train_test_split
 X_train, X_test, y_train, y_test = train_test_split(
-    X, y, test_size=0.2, stratify=y, random_state=42
+    X_encoded, y, test_size=0.2, stratify=y, random_state=42
 )
 
 cv = 5  # número de folds
