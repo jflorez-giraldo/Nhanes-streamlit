@@ -290,3 +290,60 @@ st.write(f"Datos de prueba: {X_test.shape[0]} filas")
 # Usar X_train para PCA/MCA y selección de variables
 X_for_analysis = X_train.copy()
 y_for_analysis = y_train.copy()
+
+# Detección automática de variables categóricas
+categorical_features = [col for col in X_for_analysis.columns 
+                    if X_for_analysis[col].dtype == 'object' or 
+                       X_for_analysis[col].dtype == 'string' or 
+                       X_for_analysis[col].nunique() <= 10]
+
+numeric_features = X_for_analysis.select_dtypes(include=["float64", "int64"]).columns.tolist()
+if 'Condition' in numeric_features:
+    numeric_features.remove('Condition')
+
+X_num = df[numeric_features]
+X_cat = df[categorical_features]
+
+# Pipeline con imputación, escalado y PCA
+numeric_pipeline = Pipeline(steps=[
+    ("imputer", SimpleImputer(strategy="median")),
+    ("scaler", StandardScaler()),
+    ("pca", PCA(n_components=6))
+])
+X_num_pca = numeric_pipeline.fit_transform(X_num)
+
+# DataFrame con componentes
+pca_df = pd.DataFrame(X_num_pca, columns=[f"PC{i+1}" for i in range(6)])
+pca_df["Condition"] = y.values
+
+# Gráfico PCA PC1 vs PC2
+st.subheader("PCA - PC1 vs PC2")
+fig, ax = plt.subplots(figsize=(8, 6))
+sns.scatterplot(data=pca_df, x="PC1", y="PC2", hue="Condition", palette="Set2", alpha=0.8, ax=ax)
+ax.set_title("PCA - PC1 vs PC2")
+ax.set_xlabel("PC1")
+ax.set_ylabel("PC2")
+st.pyplot(fig)
+
+# Obtener los loadings del PCA (componentes * características)
+loadings = numeric_pipeline.named_steps["pca"].components_
+
+# Convertir a DataFrame con nombres de columnas
+loadings_df = pd.DataFrame(
+    loadings,
+    columns=X_num.columns,
+    index=[f"PC{i+1}" for i in range(loadings.shape[0])]
+).T  # Transponer para que columnas sean PCs y filas las variables
+
+# Ordenar las filas por la importancia de la variable en la suma de cuadrados de los componentes
+# Esto agrupa por aquellas variables con mayor contribución total
+loading_magnitude = (loadings_df**2).sum(axis=1)
+loadings_df["Importance"] = loading_magnitude
+loadings_df_sorted = loadings_df.sort_values(by="Importance", ascending=False).drop(columns="Importance")
+
+# Graficar heatmap ordenado
+st.subheader("🔍 Heatmap de Loadings del PCA (Componentes Principales)")
+
+fig, ax = plt.subplots(figsize=(10, 12))
+sns.heatmap(loadings_df_sorted, annot=True, cmap="coolwarm", center=0, ax=ax)
+st.pyplot(fig)
