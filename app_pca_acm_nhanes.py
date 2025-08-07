@@ -297,81 +297,65 @@ sns.heatmap(loadings_df_sorted, annot=True, cmap="coolwarm", center=0, ax=ax)
 st.pyplot(fig)
 
 class MCA_Transformer(BaseEstimator, TransformerMixin):
-    def __init__(self, n_components=6):
+    def __init__(self, n_components=2):
         self.n_components = n_components
+        self.imputer = SimpleImputer(strategy='most_frequent')
+        self.encoder = OneHotEncoder(handle_unknown='ignore', sparse=False)
         self.mca_result_ = None
-        self.cols_ = None
+        self.columns_ = None
 
     def fit(self, X, y=None):
-        # Asegurarse de que X es un DataFrame
-        if not isinstance(X, pd.DataFrame):
-            X = pd.DataFrame(X)
+        # Imputar valores faltantes
+        X_imputed = self.imputer.fit_transform(X)
 
-        # Convertir a enteros si es necesario (OneHotEncoder produce float)
-        X = X.astype(int)
+        # Codificar categóricas
+        X_encoded = self.encoder.fit_transform(X_imputed)
+        self.columns_ = self.encoder.get_feature_names_out(X.columns)
 
-        self.cols_ = X.columns
-        self.mca_result_ = mca.MCA(X)
+        # MCA
+        df_encoded = pd.DataFrame(X_encoded, columns=self.columns_)
+        self.mca_result_ = mca.MCA(df_encoded, ncols=self.n_components)
         return self
 
     def transform(self, X):
-        if not isinstance(X, pd.DataFrame):
-            X = pd.DataFrame(X)
-        X = X.astype(int)
-        return self.mca_result_.fs_r(N=self.n_components)
+        X_imputed = self.imputer.transform(X)
+        X_encoded = self.encoder.transform(X_imputed)
+        df_encoded = pd.DataFrame(X_encoded, columns=self.columns_)
+        coords = self.mca_result_.fs_r(N=2)  # Proyecciones de filas
+        return coords
 
     def get_mca(self):
         return self.mca_result_
 
-to_int_df = FunctionTransformer(
-    lambda x: pd.DataFrame(x).astype(int),
-    feature_names_out='one-to-one'
-)
+    def get_column_coords(self):
+        """ Devuelve coordenadas de las columnas codificadas (variables originales) """
+        cols = self.mca_result_.cols
+        return pd.DataFrame(cols, columns=[f"Dim{i+1}" for i in range(len(cols[0]))], index=self.columns_)
 
-categorical_pipeline = Pipeline(steps=[
-    ("imputer", SimpleImputer(strategy="most_frequent")),
-    ("encoder", OneHotEncoder(sparse_output=False, handle_unknown="ignore")),
-    ("to_int", to_int_df),
+
+
+categorical_pipeline = Pipeline([
     ("mca", MCA_Transformer(n_components=6))
 ])
 
-# One-hot encoding + MCA
 X_cat_mca = categorical_pipeline.fit_transform(X_cat)
+mca_model = categorical_pipeline.named_steps["mca"]
 
-# Extraer el modelo MCA para graficar
-mca_result = categorical_pipeline.named_steps["mca"].get_mca()
+# Coordenadas de las columnas (variables)
+coords = mca_model.get_column_coords()
 
-# Coordenadas de variables (columnas one-hot codificadas)
-coords = pd.DataFrame(
-    mca_result.cols,
-    columns=[f"Dim{i+1}" for i in range(len(mca_result.L))]
-)
-
-# Obtener nombres de columnas del one-hot encoding
-encoded_columns = categorical_pipeline.named_steps["encoder"].get_feature_names_out(input_features=X_cat.columns)
-coords.index = encoded_columns
-
-# Heatmap de las coordenadas
-st.subheader("🔍 Heatmap de coordenadas de variables categóricas (MCA)")
-
+# Ordenar por importancia en la primera dimensión
 coords_sorted = coords.reindex(coords["Dim1"].abs().sort_values(ascending=False).index)
 
-fig, ax = plt.subplots(figsize=(10, 12))
+# Visualización con seaborn
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+plt.figure(figsize=(10, 8))
 sns.heatmap(coords_sorted, cmap="coolwarm", center=0, annot=True)
-plt.title("MCA - Column Coordinates")
+plt.title("MCA - Column Coordinates (Loadings)")
 plt.tight_layout()
-st.pyplot(fig)
-
-mca_df = pd.DataFrame(X_cat_mca, columns=[f"Dim{i+1}" for i in range(X_cat_mca.shape[1])])
-mca_df["Condition"] = y.values
-
-st.subheader("📉 MCA - Dim1 vs Dim2")
-
-fig, ax = plt.subplots(figsize=(8, 6))
-sns.scatterplot(data=mca_df, x="Dim1", y="Dim2", hue="Condition", palette="Set2", alpha=0.8, ax=ax)
-ax.set_title("MCA - Dim1 vs Dim2")
-st.pyplot(fig)
-
+plt.show()
 
 
 
