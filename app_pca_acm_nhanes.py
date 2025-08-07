@@ -229,8 +229,6 @@ if df.empty:
 st.subheader("Preview of Filtered Data")
 st.dataframe(df.head(10))
 
-#df = df.astype({col: "str" for col in df.select_dtypes(include="object").columns})
-
 # Convertir columnas object a string
 object_cols = [
     "Alcohol Intake - Past 12 months (Q1)",
@@ -291,9 +289,6 @@ numeric_pipeline = Pipeline(steps=[
 ])
 
 X_num_pca = numeric_pipeline.fit_transform(X_num)
-
-# Reparar automáticamente los tipos de columnas antes de mostrarlos
-df_safe = df.convert_dtypes()
 
 # Mostrar en Streamlit
 st.dataframe(df_safe)
