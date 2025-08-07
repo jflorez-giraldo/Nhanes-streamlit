@@ -385,11 +385,15 @@ preprocessor = ColumnTransformer(transformers=[
 ])
 
 # Aplicar transformación
+# Ajustar preprocesador antes de usar el encoder
 preprocessor.fit(df)
-X = preprocessor.transform(df)
 
 # Obtener nombres de columnas después del preprocesamiento
 cat_encoded_columns = preprocessor.named_transformers_["cat"]["encoder"].get_feature_names_out(cat_features)
+
+# Transformar los datos después de obtener los nombres
+X = preprocessor.transform(df)
+
 X_columns = np.concatenate([num_features, cat_encoded_columns])
 X_df = pd.DataFrame(X, columns=X_columns)
 
