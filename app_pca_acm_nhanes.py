@@ -372,7 +372,6 @@ def plot_mca_contributions_heatmap(contribs, figsize=(10, 6)):
     plt.show()
 
 
-
 # Extraer el objeto MCA después del pipeline
 mca_result = categorical_pipeline.named_steps["mca"].get_mca()
 
