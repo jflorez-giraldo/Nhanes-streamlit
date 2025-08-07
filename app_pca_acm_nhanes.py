@@ -306,35 +306,35 @@ plt.show()
 
 
 
-# Custom transformer para MCA
-class MCA_Transformer(BaseEstimator, TransformerMixin):
-    def __init__(self, n_components=6):
-        self.n_components = n_components
-        self.mca = None
-        self.columns_ = None
+## Custom transformer para MCA
+#class MCA_Transformer(BaseEstimator, TransformerMixin):
+#    def __init__(self, n_components=6):
+#        self.n_components = n_components
+#        self.mca = None
+#        self.columns_ = None
 
-    def fit(self, X, y=None):
-        # Convertir a DataFrame si es necesario
-        if not isinstance(X, pd.DataFrame):
-            X = pd.DataFrame(X)
-        self.columns_ = X.columns
-        self.mca = MCA(X, ncols=self.n_components)
-        return self
+#    def fit(self, X, y=None):
+#        # Convertir a DataFrame si es necesario
+#        if not isinstance(X, pd.DataFrame):
+#            X = pd.DataFrame(X)
+#        self.columns_ = X.columns
+#        self.mca = MCA(X, ncols=self.n_components)
+#        return self
 
-    def transform(self, X):
-        if not isinstance(X, pd.DataFrame):
-            X = pd.DataFrame(X, columns=self.columns_)
-        mca_result = MCA(X, ncols=self.n_components)
-        return mca_result.fs_r(N=self.n_components)  # Retorna factores principales
+#    def transform(self, X):
+#        if not isinstance(X, pd.DataFrame):
+#            X = pd.DataFrame(X, columns=self.columns_)
+#        mca_result = MCA(X, ncols=self.n_components)
+#        return mca_result.fs_r(N=self.n_components)  # Retorna factores principales
 
-# Construcción del pipeline
-categorical_pipeline = Pipeline(steps=[
-    ("imputer", SimpleImputer(strategy="most_frequent")),
-    ("encoder", OneHotEncoder(handle_unknown="ignore", sparse_output=False)),
-    ("mca", MCA_Transformer(n_components=6))
-])
+## Construcción del pipeline
+#categorical_pipeline = Pipeline(steps=[
+#    ("imputer", SimpleImputer(strategy="most_frequent")),
+#    ("encoder", OneHotEncoder(handle_unknown="ignore", sparse_output=False)),
+#    ("mca", MCA_Transformer(n_components=6))
+#])
 
-X_cat_mca = categorical_pipeline.fit_transform(X_cat)
+#X_cat_mca = categorical_pipeline.fit_transform(X_cat)
 
 
 
