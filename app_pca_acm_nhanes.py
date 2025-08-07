@@ -192,7 +192,7 @@ category_df = pd.DataFrame(category_info)
 # Filtros
 with st.sidebar:
     st.header("Filters")
-    Gender_filter = st.multiselect("Gender", sorted(df["Gender"].dropna().unique()))
+    gender_filter = st.multiselect("Gender", sorted(df["Gender"].dropna().unique()))
     race_filter = st.multiselect("Race/Ethnicity", sorted(df["Race/Ethnicity"].dropna().unique()))
     condition_filter = st.multiselect("Condition", sorted(df["Condition"].dropna().unique()))
     #st.markdown("---")
@@ -200,7 +200,7 @@ with st.sidebar:
 
 # Aplicar filtros
 for col, values in {
-    "Gender": sex_filter, "Race": race_filter, "Condition": condition_filter
+    "Gender": gender_filter, "Race/Ethnicity": race_filter, "Condition": condition_filter
 }.items():
     if values:
         df = df[df[col].isin(values)]
