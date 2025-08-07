@@ -77,7 +77,7 @@ st.dataframe(df.head())
 
 # --- Selección de columnas ---
 categorical_cols = ["AgeGroup", "Sex", "Race and Hispanic origin"]
-numerical_cols = ["Prevalence", "Standard Error", "95% CI Lower", "95% CI Upper"]
+numerical_cols = ["Percent", "Standard Error", "95% CI Lower", "95% CI Upper"]
 
 # Eliminar filas con valores faltantes
 subset_cols = numerical_cols + categorical_cols + ["Measure"]
