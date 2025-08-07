@@ -206,9 +206,28 @@ with col2:
     st.dataframe(category_df, use_container_width=True)
 
 
-# Mostrar tabla de tipos
-st.subheader("Tipos de Datos en el DataFrame")
-st.dataframe(df.dtypes.reset_index().rename(columns={"index": "Column", 0: "Type"}))
+st.subheader("Primeras 10 filas del dataset")
+st.dataframe(df.head(10), use_container_width=True)
+
+# Filtros
+with st.sidebar:
+    st.header("Filters")
+    gender_filter = st.multiselect("Gender", sorted(df["Gender"].dropna().unique()))
+    race_filter = st.multiselect("Race/Ethnicity", sorted(df["Race/Ethnicity"].dropna().unique()))
+    condition_filter = st.multiselect("Condition", sorted(df["Condition"].dropna().unique()))
+    #st.markdown("---")
+    #k_vars = st.slider("Number of variables to select", 2, 10, 5)
+
+# Aplicar filtros
+for col, values in {
+    "Gender": gender_filter, "Race/Ethnicity": race_filter, "Condition": condition_filter
+}.items():
+    if values:
+        df = df[df[col].isin(values)]
+
+if df.empty:
+    st.warning("No data available after applying filters.")
+    st.stop()
 
 # Mostrar advertencias
 problematic_cols = df.columns[df.dtypes == "object"].tolist()
