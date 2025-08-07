@@ -310,7 +310,7 @@ class MCA_Transformer(BaseEstimator, TransformerMixin):
         self.columns_ = self.encoder.get_feature_names_out(X.columns)
 
         df_encoded = pd.DataFrame(X_encoded, columns=self.columns_)
-        self.mca_result_ = mca.MCA(df_encoded)  # Sin ncols
+        self.mca_result_ = MCA(df_encoded)  # Sin ncols
         return self
 
     def transform(self, X):
