@@ -375,18 +375,20 @@ def plot_mca_contributions_heatmap(contribs, figsize=(10, 6)):
 # Extraer el objeto MCA después del pipeline
 mca_result = categorical_pipeline.named_steps["mca"].get_mca()
 
-coords = pd.DataFrame(mca_model.cols, columns=[f"Dim{i+1}" for i in range(len(mca_model.L))])
+coords = pd.DataFrame(
+    mca_model.cols,
+    columns=[f"Dim{i+1}" for i in range(len(mca_model.L))]
+)
 
-plt.figure(figsize=(8, 6))
-plt.scatter(coords["Dim1"], coords["Dim2"])
-for i in range(coords.shape[0]):
-    plt.text(coords.iloc[i, 0], coords.iloc[i, 1], f"V{i+1}", fontsize=9)
-plt.axhline(0, color="gray", linestyle="--")
-plt.axvline(0, color="gray", linestyle="--")
-plt.xlabel("Dim 1")
-plt.ylabel("Dim 2")
-plt.title("MCA Column Coordinates")
-plt.grid(True)
+# Si tienes los nombres originales de las variables codificadas (OneHot)
+coords.index = X_encoded_df.columns
+
+# Ordenar las coordenadas por magnitud absoluta para la primera dimensión (opcional)
+coords_sorted = coords.reindex(coords["Dim1"].abs().sort_values(ascending=False).index)
+
+plt.figure(figsize=(10, 8))
+sns.heatmap(coords_sorted, cmap="coolwarm", center=0, annot=True)
+plt.title("MCA - Column Coordinates (loadings)")
 plt.tight_layout()
 plt.show()
 
