@@ -247,7 +247,12 @@ else:
     st.success("✅ No hay columnas problemáticas detectadas.")
 
 # Separar variables
+target_col = "Condition"
+
+# Evitar que la variable objetivo quede en X
+X = df.drop(columns=[target_col])
 y = df["Condition"]
+
 
 numeric_features = df.select_dtypes(include=["float64", "int64"]).columns.tolist()
 if 'Condition' in numeric_features:
@@ -387,16 +392,16 @@ preprocessor = ColumnTransformer(transformers=[
 
 # Aplicar transformación
 # Ajustar preprocesador antes de usar el encoder
-preprocessor.fit(df)
+#preprocessor.fit(df)
 
 # Obtener nombres de columnas después del preprocesamiento
-cat_encoded_columns = preprocessor.named_transformers_["cat"]["encoder"].get_feature_names_out(cat_features)
+#cat_encoded_columns = preprocessor.named_transformers_["cat"]["encoder"].get_feature_names_out(cat_features)
 
 # Transformar los datos después de obtener los nombres
-X = preprocessor.transform(df)
+#X = preprocessor.transform(df)
 
-X_columns = np.concatenate([num_features, cat_encoded_columns])
-X_df = pd.DataFrame(X, columns=X_columns)
+#X_columns = np.concatenate([num_features, cat_encoded_columns])
+#X_df = pd.DataFrame(X, columns=X_columns)
 
 # ======================
 # 🔍 Sección de selección de variables
@@ -408,7 +413,7 @@ st.header("🔍 Selección de Variables con Validación Cruzada")
 # 1️⃣ Separación estratificada
 # ============================
 X_train, X_test, y_train, y_test = train_test_split(
-    X_df, y, test_size=0.2, stratify=y, random_state=42
+    X, y, test_size=0.2, stratify=y, random_state=42
 )
 
 cv = 5  # número de folds
