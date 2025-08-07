@@ -291,37 +291,63 @@ fig, ax = plt.subplots(figsize=(10, 12))
 sns.heatmap(loadings_df_sorted, annot=True, cmap="coolwarm", center=0, ax=ax)
 st.pyplot(fig)
 
+class MCA_Transformer(BaseEstimator, TransformerMixin):
+    def __init__(self, n_components=6):
+        self.n_components = n_components
+        self.mca = None
+        self.columns_ = None
+        self.mca_result_ = None
+
+    def fit(self, X, y=None):
+        if not isinstance(X, pd.DataFrame):
+            X = pd.DataFrame(X)
+        self.columns_ = X.columns
+        self.mca_result_ = MCA(X)
+        return self
+
+    def transform(self, X):
+        if not isinstance(X, pd.DataFrame):
+            X = pd.DataFrame(X, columns=self.columns_)
+        return self.mca_result_.fs_r(N=self.n_components)
+    
+    def get_mca(self):
+        return self.mca_result_
+
+categorical_pipeline = Pipeline(steps=[
+    ("imputer", SimpleImputer(strategy="most_frequent")),
+    ("encoder", OneHotEncoder(handle_unknown="ignore", sparse_output=False)),
+    ("mca", MCA_Transformer(n_components=6))
+])
+
+X_cat_mca = categorical_pipeline.fit_transform(X_cat)
+mca_result = categorical_pipeline.named_steps["mca"].get_mca()
+
+X_cat_mca_df = pd.DataFrame(X_cat_mca, columns=[f"F{i+1}" for i in range(X_cat_mca.shape[1])])
+X_cat_mca_df["Condition"] = y.values  # Agregar variable objetivo
+
+st.subheader("🎯 MCA: Scatterplot Factor 1 vs Factor 2")
+
+fig, ax = plt.subplots(figsize=(8, 6))
+sns.scatterplot(data=X_cat_mca_df, x="F1", y="F2", hue="Condition", palette="tab10", alpha=0.7)
+ax.set_title("MCA - Factores principales 1 y 2")
+ax.axhline(0, linestyle='--', color='gray')
+ax.axvline(0, linestyle='--', color='gray')
+st.pyplot(fig)
+
+contribs = mca_result.columns_contrib_  # DataFrame con contribuciones de columnas
+
+# Ordenar las variables por su importancia total en los factores
+contribs["Total"] = contribs.iloc[:, :6].sum(axis=1)
+contribs_sorted = contribs.sort_values(by="Total", ascending=False).drop(columns="Total")
+
+st.subheader("📊 MCA: Heatmap de Contribuciones a Factores")
+
+fig, ax = plt.subplots(figsize=(10, 12))
+sns.heatmap(contribs_sorted.iloc[:, :6], annot=True, cmap="YlGnBu", ax=ax)
+st.pyplot(fig)
 
 
-## Custom transformer para MCA
-#class MCA_Transformer(BaseEstimator, TransformerMixin):
-#    def __init__(self, n_components=6):
-#        self.n_components = n_components
-#        self.mca = None
-#        self.columns_ = None
 
-#    def fit(self, X, y=None):
-#        # Convertir a DataFrame si es necesario
-#        if not isinstance(X, pd.DataFrame):
-#            X = pd.DataFrame(X)
-#        self.columns_ = X.columns
-#        self.mca = MCA(X, ncols=self.n_components)
-#        return self
-
-#    def transform(self, X):
-#        if not isinstance(X, pd.DataFrame):
-#            X = pd.DataFrame(X, columns=self.columns_)
-#        mca_result = MCA(X, ncols=self.n_components)
-#        return mca_result.fs_r(N=self.n_components)  # Retorna factores principales
-
-## Construcción del pipeline
-#categorical_pipeline = Pipeline(steps=[
-#    ("imputer", SimpleImputer(strategy="most_frequent")),
-#    ("encoder", OneHotEncoder(handle_unknown="ignore", sparse_output=False)),
-#    ("mca", MCA_Transformer(n_components=6))
-#])
-
-#X_cat_mca = categorical_pipeline.fit_transform(X_cat)
 
 
 
