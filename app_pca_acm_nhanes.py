@@ -87,10 +87,18 @@ forest.fit(X_combined, y)
 importances = forest.feature_importances_
 
 # Envoltura: RFE
+# Asegurar que y esté alineado con X_combined
+y = y.reset_index(drop=True)
+X_combined = pd.DataFrame(X_combined).reset_index(drop=True)
+
+# RFE: Envoltura
 rfe_model = RFE(LogisticRegression(max_iter=1000), n_features_to_select=k_vars)
 rfe_model.fit(X_combined, y)
 X_rfe = rfe_model.transform(X_combined)
-X_rfe = np.atleast_2d(X_rfe)
+
+# Asegurar que X_rfe es 2D correctamente
+if X_rfe.ndim == 1:
+    X_rfe = X_rfe.reshape(-1, 1)
 
 # Validación cruzada
 cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
