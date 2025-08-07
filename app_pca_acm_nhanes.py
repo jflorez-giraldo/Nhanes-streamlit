@@ -35,6 +35,15 @@ df = df.rename(columns={
     "Measure": "Condition"
 })
 
+# Mostrar tipos de variables
+st.subheader("Resumen del tipo de variables")
+info_df = pd.DataFrame({
+    "Column": df.columns,
+    "Non-Null Count": df.notnull().sum().values,
+    "Dtype": df.dtypes.values
+})
+st.dataframe(info_df)
+
 # Filtros
 with st.sidebar:
     st.header("Filters")
