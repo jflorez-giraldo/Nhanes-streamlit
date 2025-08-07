@@ -105,7 +105,9 @@ cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
 model = LogisticRegression(max_iter=1000)
 
 score_filter = cross_val_score(model, X_kbest, y, cv=cv).mean()
-score_embed = cross_val_score(model, X_combined[:, np.argsort(importances)[-k_vars:]], y, cv=cv).mean()
+X_np = np.array(X_combined)
+selected_features = np.argsort(importances)[-k_vars:]
+score_embed = cross_val_score(model, X_np[:, selected_features], y, cv=cv).mean()
 score_rfe = cross_val_score(model, X_rfe, y, cv=cv).mean()
 
 st.markdown(f"- **SelectKBest (filtro):** Accuracy promedio: {score_filter:.2f}")
