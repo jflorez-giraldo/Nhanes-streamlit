@@ -229,8 +229,25 @@ if df.empty:
 st.subheader("Preview of Filtered Data")
 st.dataframe(df.head(10))
 
-df = df.astype({col: "str" for col in df.select_dtypes(include="object").columns})
+#df = df.astype({col: "str" for col in df.select_dtypes(include="object").columns})
 
+# Convertir columnas object a string
+object_cols = [
+    "Alcohol Intake - Past 12 months (Q1)",
+    "Alcohol Frequency",
+    "Smoking Status",
+    "Gender",
+    "Race/Ethnicity",
+    "Citizenship",
+    "Education Level",
+    "Marital Status",
+    "Household Size",
+    "Masked PSU",
+    "Health Insurance Coverage",
+    "Condition"
+]
+
+df[object_cols] = df[object_cols].astype(str)
 st.subheader("🔍 Column Type Checker")
 
 # Mostrar tipos de datos
