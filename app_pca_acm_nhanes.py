@@ -298,22 +298,22 @@ st.pyplot(fig)
 class MCA_Transformer(BaseEstimator, TransformerMixin):
     def __init__(self, n_components=6):
         self.n_components = n_components
-        self.mca = None
-        self.columns_ = None
         self.mca_result_ = None
+        self.columns_ = None
 
     def fit(self, X, y=None):
+        # Convertir a DataFrame si no lo es
         if not isinstance(X, pd.DataFrame):
             X = pd.DataFrame(X)
         self.columns_ = X.columns
-        self.mca_result_ = MCA(X)
+        self.mca_result_ = mca.MCA(X, ncols=self.n_components)
         return self
 
     def transform(self, X):
         if not isinstance(X, pd.DataFrame):
             X = pd.DataFrame(X, columns=self.columns_)
-        return self.mca_result_.fs_r(N=self.n_components)
-    
+        return self.mca_result_.fs_r(N=self.n_components)  # Coordenadas principales
+
     def get_mca(self):
         return self.mca_result_
 
@@ -326,27 +326,62 @@ categorical_pipeline = Pipeline(steps=[
 # Suponiendo que X_cat tiene las columnas categóricas originales
 X_cat_mca = categorical_pipeline.fit_transform(X_cat)
 
-# Obtener nombres de columnas de OneHotEncoder
-encoder = categorical_pipeline.named_steps["encoder"]
-feature_names = encoder.get_feature_names_out()
+def plot_mca_column_coordinates(mca_result, dims=(0, 1), figsize=(8, 6), title="Column Coordinates"):
+    coords = pd.DataFrame(mca_result.cols, columns=['Dim1', 'Dim2'])
+    
+    plt.figure(figsize=figsize)
+    plt.axhline(0, color='gray', lw=1, ls='--')
+    plt.axvline(0, color='gray', lw=1, ls='--')
+    
+    for i, (x, y) in enumerate(zip(coords.iloc[:, dims[0]], coords.iloc[:, dims[1]])):
+        plt.text(x, y, f'V{i+1}', fontsize=9)
 
-# Obtener datos imputados
-X_imputed = categorical_pipeline.named_steps["imputer"].transform(X_cat)
+    plt.scatter(coords.iloc[:, dims[0]], coords.iloc[:, dims[1]], alpha=0.6)
+    plt.xlabel(f"Dimension {dims[0]+1}")
+    plt.ylabel(f"Dimension {dims[1]+1}")
+    plt.title(title)
+    plt.grid(True)
+    plt.show()
 
-# Transformar con OneHotEncoder
-X_encoded = encoder.transform(X_imputed)
+def compute_column_contributions(mca_result):
+    """
+    Retorna las contribuciones relativas de cada variable codificada por dimensión.
+    """
+    col_coords = pd.DataFrame(mca_result.cols)
+    eigenvalues = mca_result.L  # varianzas por dimensión
 
-# Convertir a DataFrame
-X_encoded_df = pd.DataFrame(X_encoded, columns=feature_names)
+    # Contribución aproximada: (coord^2 / eigenvalue) * 100
+    contribs = (col_coords ** 2) / eigenvalues
+    contribs = contribs.div(contribs.sum(axis=0), axis=1) * 100  # % contribución
+    contribs.columns = [f"Dim{i+1}" for i in range(contribs.shape[1])]
+    
+    return contribs
 
-# Coordenadas de columnas
-coords = mca_model.column_coordinates(X_encoded_df)
+def plot_mca_contributions_heatmap(contribs, figsize=(10, 6)):
+    contribs_sorted = contribs.copy()
+    # Ordenar por contribución total
+    contribs_sorted["Total"] = contribs.sum(axis=1)
+    contribs_sorted = contribs_sorted.sort_values("Total", ascending=False).drop(columns="Total")
+    
+    plt.figure(figsize=figsize)
+    sns.heatmap(contribs_sorted, cmap="viridis", annot=True, fmt=".1f")
+    plt.title("Contribuciones de columnas a las dimensiones")
+    plt.xlabel("Dimensión")
+    plt.ylabel("Variable codificada")
+    plt.tight_layout()
+    plt.show()
 
-# Correlaciones
-correlations = mca_model.column_correlations(X_encoded_df)
 
-# Biplot si deseas
-mca_model.plot_coordinates(X=X_encoded_df, ax=None, figsize=(10, 8))
+
+# Extraer el objeto MCA después del pipeline
+mca_result = categorical_pipeline.named_steps["mca"].get_mca()
+
+# Coordenadas (loadings)
+plot_mca_column_coordinates(mca_result)
+
+# Contribuciones
+contribs = compute_column_contributions(mca_result)
+plot_mca_contributions_heatmap(contribs)
 
 
 
