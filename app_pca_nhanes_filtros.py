@@ -12,30 +12,37 @@ from sklearn.feature_selection import RFE
 from sklearn.linear_model import LogisticRegression
 from sklearn.pipeline import Pipeline
 from imblearn.pipeline import Pipeline as ImbPipeline
-from imblearn.over_sampling import SMOTE
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.experimental import enable_iterative_imputer  # Necesario para activar IterativeImputer
-from sklearn.impute import IterativeImputer
 from imblearn.over_sampling import ADASYN
+from sklearn.experimental import enable_iterative_imputer
+from sklearn.impute import IterativeImputer
+from sklearn.ensemble import RandomForestClassifier
 
 # Streamlit config
 st.set_page_config(page_title="PCA and MCA on NHANES", layout="wide")
 st.title("PCA, MCA and Feature Selection on NHANES Data")
 
-# Load dataset from GitHub
+# Load dataset
 @st.cache_data
 def load_data():
     url = "https://raw.githubusercontent.com/jflorez-giraldo/Nhanes-streamlit/main/NHANES_Select_Chronic_Conditions_Prevalence_Estimates.csv"
     df = pd.read_csv(url)
+    df.columns = df.columns.str.strip()  # Limpiar espacios en nombres de columnas
     return df
 
 df = load_data()
+
+# Renombrar columnas para mantener consistencia
+df = df.rename(columns={
+    "Age Group": "AgeGroup",
+    "Race and Hispanic Origin": "Race and Hispanic origin",
+    "Lower 95% CI Limit": "95% CI Lower",
+    "Upper 95% CI Limit": "95% CI Upper",
+    "Percent": "Prevalence"
+})
+
 st.write("Original dataset shape:", df.shape)
 
-st.write("Columnas disponibles en el DataFrame:")
-st.write(df.columns.tolist())
-
-# Sidebar filters
+# --- Sidebar filters ---
 st.sidebar.header("Filter data")
 
 if "AgeGroup" in df.columns:
@@ -54,20 +61,18 @@ if "Measure" in df.columns:
 st.subheader("Filtered Dataset")
 st.dataframe(df.head())
 
-# Selección de columnas categóricas y numéricas reales
-categorical_cols = ["Survey Years", "Sex", "Age Group", "Race and Hispanic Origin"]
-numerical_cols = ["Percent", "Standard Error", "Lower 95% CI Limit", "Upper 95% CI Limit"]
+# --- Selección de columnas ---
+categorical_cols = ["AgeGroup", "Sex", "Race and Hispanic origin"]
+numerical_cols = ["Prevalence", "Standard Error", "95% CI Lower", "95% CI Upper"]
 
-# Convertir columnas numéricas a tipo numérico
-for col in numerical_cols:
-    df[col] = pd.to_numeric(df[col], errors='coerce')
-
-# Asegurarse de que las columnas existen en el DataFrame
+# Eliminar filas con valores faltantes
 subset_cols = numerical_cols + categorical_cols + ["Measure"]
 subset_cols = [col for col in subset_cols if col in df.columns]
-
-# Luego aplicar dropna solo a las columnas que existen
 df = df.dropna(subset=subset_cols)
+
+# Convertir numéricas
+for col in numerical_cols:
+    df[col] = pd.to_numeric(df[col], errors='coerce')
 
 # Encode target variable
 target = "Measure"
@@ -77,9 +82,9 @@ df[target] = le.fit_transform(df[target])
 X_num = df[numerical_cols]
 y = df[target]
 
-# --- PCA Pipeline ---
+# --- PCA ---
 st.subheader("PCA (Numerical Features)")
-# Pipeline hasta el balanceo
+
 balance_pipeline = ImbPipeline([
     ("imputer", IterativeImputer(random_state=42)),
     ("scaler", StandardScaler()),
@@ -88,7 +93,6 @@ balance_pipeline = ImbPipeline([
 
 X_balanced, y_balanced = balance_pipeline.fit_resample(X_num, y)
 
-# PCA por separado
 pca = PCA(n_components=2)
 X_pca = pca.fit_transform(X_balanced)
 
@@ -101,18 +105,13 @@ legend1 = ax1.legend(*scatter.legend_elements(), title="Condition")
 ax1.add_artist(legend1)
 st.pyplot(fig1)
 
-# --- MCA Pipeline ---
+# --- MCA ---
 st.subheader("MCA (Categorical Features)")
 
 df_cat = df[categorical_cols].astype("category")
-
-# Renombrar la instancia para no sobrescribir el módulo
 mca_model = mca.MCA(df_cat)
-
-# Extraer coordenadas
 mca_coords = mca_model.fs_r(N=2)
 
-# Gráfica
 fig2, ax2 = plt.subplots()
 ax2.scatter(mca_coords[:, 0], mca_coords[:, 1], alpha=0.5)
 ax2.set_xlabel("MCA 1")
@@ -136,7 +135,7 @@ sns.barplot(data=importance_df, x="Importance", y="Feature", ax=ax3)
 ax3.set_title("Feature Importance")
 st.pyplot(fig3)
 
-# --- Correlation Filter ---
+# --- Correlation with Target ---
 st.subheader("Correlation with Target")
 correlations = [np.corrcoef(X_num[col], y)[0, 1] for col in numerical_cols]
 corr_df = pd.DataFrame({
@@ -149,14 +148,13 @@ sns.barplot(data=corr_df, x="Abs Correlation", y="Feature", ax=ax4)
 ax4.set_title("Absolute Correlation with Condition")
 st.pyplot(fig4)
 
-# --- Wrapper: RFE ---
+# --- Recursive Feature Elimination ---
 st.subheader("Recursive Feature Elimination (RFE)")
 rfe_pipe = Pipeline([
     ("imputer", SimpleImputer()),
     ("scaler", StandardScaler()),
     ("rfe", RFE(LogisticRegression(max_iter=1000), n_features_to_select=3))
 ])
-
 rfe_pipe.fit(X_num, y)
 rfe_selected = rfe_pipe.named_steps["rfe"].support_
 rfe_ranking = rfe_pipe.named_steps["rfe"].ranking_
@@ -167,4 +165,5 @@ rfe_df = pd.DataFrame({
     "Ranking": rfe_ranking
 })
 st.dataframe(rfe_df.sort_values("Ranking"))
+
 
