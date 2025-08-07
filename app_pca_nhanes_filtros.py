@@ -1,113 +1,140 @@
 import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
-import seaborn as sns
 import streamlit as st
-from sklearn.decomposition import PCA
+from sklearn.impute import IterativeImputer
 from sklearn.preprocessing import StandardScaler
+from sklearn.decomposition import PCA
 from sklearn.pipeline import Pipeline
 from imblearn.pipeline import Pipeline as ImbPipeline
-from imblearn.over_sampling import SMOTE
+from imblearn.over_sampling import ADASYN
+import matplotlib.pyplot as plt
+import seaborn as sns
 import mca
-import requests
-from io import StringIO
+
+# Configuración de la página
+st.set_page_config(page_title="PCA NHANES", layout="wide")
 
 # Título
-st.title("🔬 NHANES PCA + MCA Dashboard")
+st.title("Análisis PCA y MCA de Condiciones Crónicas - NHANES")
 
-# URL del archivo
-CSV_URL = "https://raw.githubusercontent.com/jflorez-giraldo/Nhanes-streamlit/main/NHANES_Select_Chronic_Conditions_Prevalence_Estimates.csv"
-
-# Descargar datos
+# Cargar datos desde GitHub
 @st.cache_data
-def load_data(url):
-    response = requests.get(url)
-    df = pd.read_csv(StringIO(response.text))
+def load_data():
+    url = "https://raw.githubusercontent.com/jfcoz/NHANES-streamlit/main/NHANES_Select_Chronic_Conditions_Prevalence_Estimates.csv"
+    df = pd.read_csv(url)
+    df.columns = df.columns.str.strip()
     return df
 
-df = load_data(CSV_URL)
+df = load_data()
 
-# Validar columnas necesarias
-if "Prevalence" not in df.columns and "Percent" not in df.columns:
-    st.error("Faltan columnas críticas: se requiere 'Prevalence' o 'Percent'")
+# Revisar columnas esperadas
+required_columns = [
+    "Survey Years", "Sex", "Age Group", "Race and Hispanic Origin", 
+    "Measure", "Percent", "Standard Error", "Lower 95% CI Limit", 
+    "Upper 95% CI Limit", "Presentation Standard", "Note1", "Notea"
+]
+
+missing_cols = [col for col in required_columns if col not in df.columns]
+if missing_cols:
+    st.error(f"Faltan columnas críticas en el CSV: {missing_cols}")
     st.stop()
 
-# Asegurar una columna target para clasificación
-df["Target"] = df["Prevalence"] if "Prevalence" in df.columns else df["Percent"]
+# Renombrar columnas para simplificar
+df = df.rename(columns={
+    "Survey Years": "Year",
+    "Race and Hispanic Origin": "Race",
+    "Age Group": "AgeGroup",
+    "Percent": "Prevalence",
+    "Measure": "Condition"
+})
 
-# Sidebar filters
-st.sidebar.header("🔍 Filtros")
-cols_to_filter = ["Year", "Condition", "Measure", "Gender", "Race and Hispanic origin", "Age group"]
-for col in cols_to_filter:
-    if col in df.columns:
-        options = sorted(df[col].dropna().unique())
-        selected = st.sidebar.multiselect(f"{col}:", options)
-        if selected:
-            df = df[df[col].isin(selected)]
+# Filtros
+with st.sidebar:
+    st.header("Filtros")
+    year_filter = st.multiselect("Años", sorted(df["Year"].dropna().unique()), default=None)
+    sex_filter = st.multiselect("Sexo", sorted(df["Sex"].dropna().unique()), default=None)
+    race_filter = st.multiselect("Raza/Origen", sorted(df["Race"].dropna().unique()), default=None)
+    age_filter = st.multiselect("Grupo de Edad", sorted(df["AgeGroup"].dropna().unique()), default=None)
+    condition_filter = st.multiselect("Condición", sorted(df["Condition"].dropna().unique()), default=None)
 
-# Validar que haya suficientes clases
+# Aplicar filtros
+filters = {
+    "Year": year_filter,
+    "Sex": sex_filter,
+    "Race": race_filter,
+    "AgeGroup": age_filter,
+    "Condition": condition_filter
+}
+
+for col, values in filters.items():
+    if values:
+        df = df[df[col].isin(values)]
+
+# Mostrar advertencia si el dataframe está vacío
+if df.empty:
+    st.warning("No hay datos que coincidan con los filtros seleccionados.")
+    st.stop()
+
+# Validación de clases en variable objetivo
 if df["Condition"].nunique() <= 1:
-    st.warning("⚠️ Los filtros seleccionados resultan en una sola clase. Agrega más condiciones para análisis multiclase.")
+    st.warning("Los filtros seleccionados resultan en una sola clase en la variable objetivo. Se requieren al menos dos para PCA y resampling.")
     st.stop()
 
-# Separar variables numéricas y categóricas
-categorical_cols = df.select_dtypes(include="object").columns.tolist()
-numerical_cols = df.select_dtypes(include=np.number).columns.tolist()
-if "Target" in numerical_cols:
-    numerical_cols.remove("Target")  # No incluir la variable objetivo como entrada
+# Preparar datos para PCA
+X = df[["Prevalence"]].copy()
+y = df["Condition"]
 
-# ===== PCA =====
-st.subheader("📊 Análisis PCA (Componentes Principales)")
+# Pipeline con ADASYN y PCA
+pca_pipeline = ImbPipeline([
+    ("imputer", IterativeImputer(random_state=42)),
+    ("scaler", StandardScaler()),
+    ("adasyn", ADASYN(random_state=42)),
+    ("pca", PCA(n_components=2))
+])
 
-if numerical_cols:
-    X_num = df[numerical_cols]
-    y = df["Condition"]
+X_pca, y_pca = pca_pipeline.fit_resample(X, y)
 
-    # Normalizar y balancear clases
-    pca_pipeline = ImbPipeline([
-        ("scaler", StandardScaler()),
-        ("smote", SMOTE()),
-        ("pca", PCA(n_components=2))
-    ])
+# Visualización PCA
+pca_df = pd.DataFrame(X_pca, columns=["PC1", "PC2"])
+pca_df["Condition"] = y_pca
 
-    try:
-        X_pca, y_balanced = pca_pipeline.fit_resample(X_num, y)
+st.subheader("Visualización PCA")
+fig_pca, ax_pca = plt.subplots(figsize=(10, 6))
+sns.scatterplot(data=pca_df, x="PC1", y="PC2", hue="Condition", palette="tab10", ax=ax_pca)
+ax_pca.set_title("PCA con balanceo ADASYN")
+st.pyplot(fig_pca)
 
-        fig1, ax1 = plt.subplots(figsize=(10, 6))
-        scatter = ax1.scatter(X_pca[:, 0], X_pca[:, 1], c=pd.factorize(y_balanced)[0], cmap="tab10", alpha=0.7)
-        ax1.set_title("PCA - Componentes principales")
-        ax1.set_xlabel("Componente 1")
-        ax1.set_ylabel("Componente 2")
-        ax1.legend(*scatter.legend_elements(), title="Clase")
-        st.pyplot(fig1)
+# MCA
+st.subheader("Análisis de Correspondencias Múltiples (MCA)")
 
-    except ValueError as e:
-        st.error(f"Error durante el análisis PCA: {e}")
-else:
-    st.info("No hay suficientes variables numéricas para aplicar PCA.")
+cat_cols = ["Sex", "Race", "AgeGroup"]
+df_cat = df[cat_cols].dropna()
 
-# ===== MCA =====
-st.subheader("📈 Análisis de Correspondencias Múltiples (MCA)")
+# One-hot encoding
+df_dummies = pd.get_dummies(df_cat)
 
-cat_for_mca = [col for col in categorical_cols if df[col].nunique() > 1]
+# Validación de datos
+if df_dummies.shape[0] < 2:
+    st.warning("No hay suficientes datos para aplicar MCA.")
+    st.stop()
 
-if len(cat_for_mca) >= 2:
-    df_cat = pd.get_dummies(df[cat_for_mca], drop_first=True)
-    mca_model = mca.MCA(df_cat)
-    coords = mca_model.fs_r(2)
+mca_model = mca.MCA(df_dummies)
+mca_coords = mca_model.fs_r(2)  # Primeras dos dimensiones
 
-    fig2, ax2 = plt.subplots(figsize=(10, 6))
-    ax2.scatter(coords[:, 0], coords[:, 1], alpha=0.6)
-    ax2.set_title("MCA - Análisis de Categorías")
-    ax2.set_xlabel("Dimensión 1")
-    ax2.set_ylabel("Dimensión 2")
-    st.pyplot(fig2)
-else:
-    st.info("No hay suficientes columnas categóricas con más de una categoría para realizar MCA.")
+# Visualización MCA
+mca_df = pd.DataFrame(mca_coords, columns=["Dim1", "Dim2"])
+mca_df["Condition"] = df["Condition"].values[:len(mca_df)]
 
-# Mostrar tabla final filtrada
-st.subheader("📄 Vista previa de los datos filtrados")
-st.dataframe(df.head(50))
+fig_mca, ax_mca = plt.subplots(figsize=(10, 6))
+sns.scatterplot(data=mca_df, x="Dim1", y="Dim2", hue="Condition", palette="Set2", ax=ax_mca)
+ax_mca.set_title("MCA - Variables Categóricas")
+st.pyplot(fig_mca)
+
+# Información adicional
+st.markdown("---")
+st.markdown("**Datos:** Encuesta NHANES (EE.UU.) sobre prevalencia de condiciones crónicas. Datos descargados de [CDC](https://wwwn.cdc.gov/NHANE).")
+st.markdown("**Autor del app:** Jonathan Florez / Adaptado por ChatGPT")
+
 
 
 
