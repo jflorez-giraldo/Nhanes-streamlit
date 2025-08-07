@@ -5,7 +5,7 @@ from sklearn.experimental import enable_iterative_imputer
 from sklearn.impute import IterativeImputer
 from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import PCA
-from sklearn.pipeline import Pipeline
+#from sklearn.pipeline import Pipeline
 from imblearn.pipeline import Pipeline  # ← esto es lo importante
 #from imblearn.pipeline import Pipeline as ImbPipeline
 from imblearn.over_sampling import ADASYN
