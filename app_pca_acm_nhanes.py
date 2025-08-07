@@ -15,7 +15,6 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from mca import MCA  # Asegúrate de tener instalada la librería: pip install mca
 from sklearn.base import BaseEstimator, TransformerMixin
-import prince
 
 
 st.set_page_config(page_title="PCA Streamlit App", layout="wide")
