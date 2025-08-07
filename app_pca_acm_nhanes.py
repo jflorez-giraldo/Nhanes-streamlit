@@ -171,6 +171,41 @@ for col in df.select_dtypes(include=["object"]).columns:
 
 df = df.reset_index(drop=True)
 
+# Mostrar info y variables categóricas lado a lado
+st.subheader("Resumen de Datos")
+
+# Crear columnas para mostrar info_df y category_df lado a lado
+col1, col2 = st.columns(2)
+
+with col1:
+    st.markdown("**Tipo de Dato y Nulos**")
+    info_df = pd.DataFrame({
+        "Column": df.columns,
+        "Non-Null Count": df.notnull().sum().values,
+        "Dtype": df.dtypes.values
+    })
+    st.dataframe(info_df, use_container_width=True)
+
+# Detección automática de variables categóricas
+categorical_vars = [col for col in df.columns 
+                    if df[col].dtype == 'object' or 
+                       df[col].dtype == 'string' or 
+                       df[col].nunique() <= 10]
+
+with col2:
+    st.markdown("**Variables Categóricas Detectadas**")
+    category_info = []
+    for col in categorical_vars:
+        unique_vals = df[col].dropna().unique()
+        category_info.append({
+            "Variable": col,
+            "Unique Classes": ", ".join(map(str, sorted(unique_vals)))
+        })
+
+    category_df = pd.DataFrame(category_info)
+    st.dataframe(category_df, use_container_width=True)
+
+
 # Mostrar tabla de tipos
 st.subheader("Tipos de Datos en el DataFrame")
 st.dataframe(df.dtypes.reset_index().rename(columns={"index": "Column", 0: "Type"}))
