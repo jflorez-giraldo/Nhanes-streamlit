@@ -136,6 +136,8 @@ pca_pipeline = ImbPipeline([
     ("pca", PCA(n_components=2))
 ])
 
+st.write(f"Tipo de pipeline: {type(pca_pipeline)}")
+
 try:
     X_pca, y_pca = pca_pipeline.fit_resample(X_rfe, y)
 except ValueError as e:
