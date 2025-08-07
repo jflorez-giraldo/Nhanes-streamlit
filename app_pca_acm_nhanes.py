@@ -326,6 +326,9 @@ class MCA_Transformer(BaseEstimator, TransformerMixin):
         return self.mca_result_.fs_r(N=df_encoded.shape[0])  # Coordenadas de filas
 
     def get_column_coords(self):
+        if self.mca_result_ is None:
+            raise ValueError("MCA has not been fitted yet. Call `fit()` first.")
+
         coords = pd.DataFrame(
             self.mca_result_.cols,
             columns=[f"Dim{i+1}" for i in range(self.mca_result_.cols.shape[1])],
