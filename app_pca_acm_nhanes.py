@@ -17,6 +17,7 @@ from mca import MCA  # Asegúrate de tener instalada la librería: pip install m
 from sklearn.base import BaseEstimator, TransformerMixin
 import prince
 from sklearn.preprocessing import FunctionTransformer
+from sklearn.feature_selection import SequentialFeatureSelector
 
 
 st.set_page_config(page_title="PCA Streamlit App", layout="wide")
@@ -335,20 +336,74 @@ st.subheader("🔍 Contribuciones de las Variables Categóricas al MCA")
 # Obtener contribuciones a las dimensiones
 contribs = mca.column_contributions_
 
-st.write("Column names in contributions DataFrame:", contribs.columns.tolist())
+#st.write("Column names in contributions DataFrame:", contribs.columns.tolist())
 
 # Seleccionar contribuciones a Dim1 y Dim2
 contribs_selected = contribs[[0, 1]]  # 0 = Dim1, 1 = Dim2
 contribs_selected.columns = ["Dim1", "Dim2"]
 
 # Ordenar por Dim1 para mejor visualización (opcional)
-contribs_sorted = contribs_selected.sort_values("Dim1", ascending=False)
+contribs_sorted = contribs_selected.sort_values(by=0, ascending=False)
+#contribs_sorted = contribs_selected.sort_values("Dim1", ascending=False)
 
 # Crear heatmap
 fig, ax = plt.subplots(figsize=(10, max(6, 0.3 * len(contribs_sorted))))
 sns.heatmap(contribs_sorted, cmap="YlGnBu", annot=True, fmt=".2f", ax=ax)
 ax.set_title("Contribuciones de las Variables a las Dimensiones del MCA")
 st.pyplot(fig)
+
+
+st.header("🔍 Selección de Variables")
+
+method = st.radio("Selecciona el método de selección de variables:", 
+                  ["Importancia del modelo", "Filtrado", "Envoltura"])
+
+n_features = st.slider("Número de variables a seleccionar:", 1, min(15, X.shape[1]), 5)
+
+if method == "Importancia del modelo":
+    st.markdown("**Modelo: Random Forest**")
+    model = RandomForestClassifier(random_state=42)
+    model.fit(X, y)
+    importances = model.feature_importances_
+    importance_df = pd.DataFrame({
+        "variable": X.columns,
+        "importancia": importances
+    }).sort_values(by="importancia", ascending=False)
+
+    st.dataframe(importance_df.head(n_features))
+    selected_features = importance_df["variable"].head(n_features).tolist()
+
+elif method == "Filtrado":
+    st.markdown("**Método: Chi-cuadrado (para variables categóricas codificadas)**")
+    selector = SelectKBest(score_func=chi2, k=n_features)
+    X_scaled = StandardScaler().fit_transform(X)  # chi2 requiere datos positivos
+    selector.fit(X_scaled, y)
+    scores = selector.scores_
+    filter_df = pd.DataFrame({
+        "variable": X.columns,
+        "score": scores
+    }).sort_values(by="score", ascending=False)
+
+    st.dataframe(filter_df.head(n_features))
+    selected_features = filter_df["variable"].head(n_features).tolist()
+
+elif method == "Envoltura":
+    st.markdown("**Método: RFE con regresión logística**")
+    model = LogisticRegression(max_iter=1000)
+    selector = RFE(estimator=model, n_features_to_select=n_features)
+    selector = selector.fit(X, y)
+    selected_mask = selector.support_
+    selected_features = X.columns[selected_mask].tolist()
+
+    st.write("Variables seleccionadas:")
+    st.write(selected_features)
+
+# Guarda selección en el estado de sesión
+st.session_state["selected_features"] = selected_features
+
+
+
+
 
 
 
