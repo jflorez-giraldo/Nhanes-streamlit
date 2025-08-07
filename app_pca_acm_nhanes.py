@@ -108,13 +108,13 @@ category_mappings = {
         3: "Non-Hispanic White",
         4: "Non-Hispanic Black",
         5: "Other Race - Including Multi-Racial"
-    }
+    },
     "DMDCITZN": {
         1: "Citizen by birth or naturalization",
         2: "Not a citizen of the U.S.",
         7: "Refused",
         9: "Don't know"
-    }
+    },
     "HIQ210": {
         1: "Yes",
         2: "No",
