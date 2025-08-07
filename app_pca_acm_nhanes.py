@@ -172,11 +172,6 @@ categorical_vars = [col for col in df.columns
                     if df[col].dtype == 'object' or 
                        df[col].nunique() <= 10]
 
-# Detección automática de variables categóricas
-categorical_vars = [col for col in df.columns 
-                    if df[col].dtype == 'object' or 
-                       df[col].nunique() <= 10]
-
 # Crear un DataFrame con las clases únicas por variable
 category_info = []
 for col in categorical_vars:
