@@ -11,6 +11,7 @@ from imblearn.pipeline import Pipeline  # ← esto es lo importante
 from imblearn.over_sampling import ADASYN
 from sklearn.compose import ColumnTransformer
 from sklearn.preprocessing import OneHotEncoder
+from sklearn.impute import SimpleImputer
 import matplotlib.pyplot as plt
 import seaborn as sns
 import mca
@@ -103,11 +104,18 @@ if (class_counts < 6).any():
     st.error("Al menos una clase tiene menos de 6 muestras. ADASYN requiere al menos 6 por clase.")
     st.stop()
 
-# Preprocesamiento: codificación de variables categóricas
+# Preprocesamiento: imputar + escalar + codificar
 preprocessor = ColumnTransformer(
     transformers=[
-        ("num", StandardScaler(), numerical_cols),
-        ("cat", OneHotEncoder(drop="first", sparse=False, handle_unknown="ignore"), ["Year", "Sex", "AgeGroup", "Race"])
+        ("num", Pipeline([
+            ("imputer", SimpleImputer(strategy="mean")),
+            ("scaler", StandardScaler())
+        ]), numerical_cols),
+        
+        ("cat", Pipeline([
+            ("imputer", SimpleImputer(strategy="most_frequent")),
+            ("encoder", OneHotEncoder(drop="first", sparse=False, handle_unknown="ignore"))
+        ]), ["Year", "Sex", "AgeGroup", "Race"])
     ]
 )
 
