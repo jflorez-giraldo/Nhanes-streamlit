@@ -355,52 +355,23 @@ st.pyplot(fig)
 
 st.header("🔍 Selección de Variables")
 
-method = st.radio("Selecciona el método de selección de variables:", 
-                  ["Importancia del modelo", "Filtrado", "Envoltura"])
+# Parámetros globales
+cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
 
-n_features = st.slider("Número de variables a seleccionar:", 1, min(15, X.shape[1]), 5)
-
-if method == "Importancia del modelo":
-    st.markdown("**Modelo: Random Forest**")
+# 1. Basada en modelos
+with st.expander("1️⃣ Selección basada en modelos (Random Forest)"):
     model = RandomForestClassifier(random_state=42)
     model.fit(X, y)
-    importances = model.feature_importances_
-    importance_df = pd.DataFrame({
-        "variable": X.columns,
-        "importancia": importances
-    }).sort_values(by="importancia", ascending=False)
+    importances = pd.Series(model.feature_importances_, index=X.columns).sort_values(ascending=False)
 
-    st.dataframe(importance_df.head(n_features))
-    selected_features = importance_df["variable"].head(n_features).tolist()
+    st.subheader("Importancia de variables")
+    fig, ax = plt.subplots(figsize=(8, 5))
+    sns.barplot(x=importances, y=importances.index, ax=ax)
+    st.pyplot(fig)
 
-elif method == "Filtrado":
-    st.markdown("**Método: Chi-cuadrado (para variables categóricas codificadas)**")
-    selector = SelectKBest(score_func=chi2, k=n_features)
-    X_scaled = StandardScaler().fit_transform(X)  # chi2 requiere datos positivos
-    selector.fit(X_scaled, y)
-    scores = selector.scores_
-    filter_df = pd.DataFrame({
-        "variable": X.columns,
-        "score": scores
-    }).sort_values(by="score", ascending=False)
-
-    st.dataframe(filter_df.head(n_features))
-    selected_features = filter_df["variable"].head(n_features).tolist()
-
-elif method == "Envoltura":
-    st.markdown("**Método: RFE con regresión logística**")
-    model = LogisticRegression(max_iter=1000)
-    selector = RFE(estimator=model, n_features_to_select=n_features)
-    selector = selector.fit(X, y)
-    selected_mask = selector.support_
-    selected_features = X.columns[selected_mask].tolist()
-
-    st.write("Variables seleccionadas:")
-    st.write(selected_features)
-
-# Guarda selección en el estado de sesión
-st.session_state["selected_features"] = selected_features
-
+    # Validación cruzada
+    scores = cross_val_score(model, X, y, cv=cv)
+    st.write("Precisión promedio (CV):", np.round(scores.mean(), 3))
 
 
 
