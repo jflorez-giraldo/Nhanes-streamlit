@@ -343,8 +343,8 @@ contribs_selected = contribs[[0, 1]]  # 0 = Dim1, 1 = Dim2
 contribs_selected.columns = ["Dim1", "Dim2"]
 
 # Ordenar por Dim1 para mejor visualización (opcional)
-contribs_sorted = contribs_selected.sort_values(by=0, ascending=False)
-#contribs_sorted = contribs_selected.sort_values("Dim1", ascending=False)
+#contribs_sorted = contribs_selected.sort_values(by=0, ascending=False)
+contribs_sorted = contribs_selected.sort_values("Dim1", ascending=False)
 
 # Crear heatmap
 fig, ax = plt.subplots(figsize=(10, max(6, 0.3 * len(contribs_sorted))))
