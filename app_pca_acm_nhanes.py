@@ -59,57 +59,51 @@ if df.empty:
 st.subheader("Preview of Filtered Data")
 st.dataframe(df.head(10))
 
-# -----------------------------
-# Preprocesamiento para PCA
-# -----------------------------
-st.subheader("PCA Analysis")
+st.subheader("PCA aplicado solo a variables numéricas")
 
-# Variables predictoras
-num_cols = ["Prevalence", "Standard Error", "Lower 95% CI Limit", "Upper 95% CI Limit"]
-cat_cols = ["Sex", "Race", "AgeGroup"]
+# 1. Seleccionar columnas numéricas
+numerical_cols = df.select_dtypes(include=['number']).columns.tolist()
 
-X_num = df[num_cols]
-X_cat = df[cat_cols]
+if len(numerical_cols) < 2:
+    st.warning("Se necesitan al menos dos variables numéricas para aplicar PCA.")
+    st.stop()
 
-# Preprocesamiento numérico
-numeric_pipeline = Pipeline([
-    ("imputer", SimpleImputer(strategy="mean")),
-    ("scaler", StandardScaler())
-])
-X_num_proc = numeric_pipeline.fit_transform(X_num)
+# 2. Escalar
+scaler = StandardScaler()
+X_scaled = scaler.fit_transform(df[numerical_cols])
 
-# Codificación categórica
-encoder = OneHotEncoder(sparse_output=False, handle_unknown="ignore")
-X_cat_proc = encoder.fit_transform(X_cat)
-
-# Concatenar numérico + categórico
-X_combined = np.hstack((X_num_proc, X_cat_proc))
-feature_names = num_cols + list(encoder.get_feature_names_out(cat_cols))
-
-# Aplicar PCA con más componentes
-n_components = min(6, X_combined.shape[1])  # máximo 6 componentes o menos si hay pocas columnas
+# 3. PCA
+n_components = min(len(numerical_cols), 6)
 pca = PCA(n_components=n_components)
-X_pca = pca.fit_transform(X_combined)
+X_pca = pca.fit_transform(X_scaled)
 
-# Loadings (componentes principales)
-loadings_df = pd.DataFrame(pca.components_.T, index=feature_names,
-                           columns=[f"PC{i+1}" for i in range(n_components)])
+# 6. Scatterplot de las dos primeras CPs
+st.write("Proyección PCA (primeras dos componentes):")
+fig2, ax2 = plt.subplots()
+scatter = ax2.scatter(X_pca[:, 0], X_pca[:, 1], alpha=0.6)
+ax2.set_xlabel("PC1")
+ax2.set_ylabel("PC2")
+ax2.set_title("PCA - Primeras dos componentes")
+st.pyplot(fig2)
 
-# Mostrar heatmap de loadings
-st.markdown("### Heatmap de PCA Loadings")
-fig, ax = plt.subplots(figsize=(10, max(6, len(feature_names) * 0.3)))
-sns.heatmap(loadings_df, cmap="coolwarm", center=0, annot=True, fmt=".2f", linewidths=0.5, ax=ax)
-ax.set_title("PCA Loadings Heatmap")
+# 4. Mostrar varianza explicada
+explained_var = pca.explained_variance_ratio_
+st.write("Varianza explicada por cada componente:")
+st.bar_chart(explained_var)
+
+# 5. Mostrar loadings como heatmap
+loadings = pd.DataFrame(pca.components_.T, 
+                        columns=[f"PC{i+1}" for i in range(n_components)],
+                        index=numerical_cols)
+
+st.write("Cargas de las variables (Loadings):")
+fig, ax = plt.subplots(figsize=(10, 6))
+sns.heatmap(loadings, annot=True, cmap="coolwarm", center=0, ax=ax)
 st.pyplot(fig)
 
-# Scatterplot con PC1 y PC2
-st.markdown("### PCA Scatter Plot (PC1 vs PC2)")
-fig2, ax2 = plt.subplots(figsize=(8, 6))
-ax2.scatter(X_pca[:, 0], X_pca[:, 1], alpha=0.7)
-ax2.set_xlabel("Principal Component 1")
-ax2.set_ylabel("Principal Component 2")
-ax2.set_title("PCA Projection")
-st.pyplot(fig2)
+
+
+
 
 
 
