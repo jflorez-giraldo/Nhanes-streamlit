@@ -305,23 +305,20 @@ class MCA_Transformer(BaseEstimator, TransformerMixin):
         self.columns_ = None
 
     def fit(self, X, y=None):
-        # Imputar valores faltantes
         X_imputed = self.imputer.fit_transform(X)
-
-        # Codificar categóricas
         X_encoded = self.encoder.fit_transform(X_imputed)
         self.columns_ = self.encoder.get_feature_names_out(X.columns)
 
-        # MCA
         df_encoded = pd.DataFrame(X_encoded, columns=self.columns_)
-        self.mca_result_ = mca.MCA(df_encoded, ncols=self.n_components)
+        self.mca_result_ = mca.MCA(df_encoded)  # Sin ncols
         return self
 
     def transform(self, X):
         X_imputed = self.imputer.transform(X)
         X_encoded = self.encoder.transform(X_imputed)
         df_encoded = pd.DataFrame(X_encoded, columns=self.columns_)
-        coords = self.mca_result_.fs_r(N=2)  # Proyecciones de filas
+
+        coords = self.mca_result_.fs_r(N=self.n_components)  # Limitar componentes aquí
         return coords
 
     def get_mca(self):
@@ -346,10 +343,6 @@ coords = mca_model.get_column_coords()
 
 # Ordenar por importancia en la primera dimensión
 coords_sorted = coords.reindex(coords["Dim1"].abs().sort_values(ascending=False).index)
-
-# Visualización con seaborn
-import matplotlib.pyplot as plt
-import seaborn as sns
 
 plt.figure(figsize=(10, 8))
 sns.heatmap(coords_sorted, cmap="coolwarm", center=0, annot=True)
