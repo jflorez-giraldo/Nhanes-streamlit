@@ -306,7 +306,7 @@ class MCA_Transformer(BaseEstimator, TransformerMixin):
         if not isinstance(X, pd.DataFrame):
             X = pd.DataFrame(X)
         self.columns_ = X.columns
-        self.mca_result_ = mca.MCA(X, ncols=self.n_components)
+        self.mca_result_ = mca.MCA(X)
         return self
 
     def transform(self, X):
