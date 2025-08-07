@@ -296,11 +296,6 @@ fig, ax = plt.subplots(figsize=(10, 12))
 sns.heatmap(loadings_df_sorted, annot=True, cmap="coolwarm", center=0, ax=ax)
 st.pyplot(fig)
 
-
-
-
-
-
 # Pipeline para MCA con prince
 categorical_pipeline = Pipeline(steps=[
     ("imputer", SimpleImputer(strategy="most_frequent")),
@@ -331,7 +326,27 @@ ax.set_xlabel("Dim1")
 ax.set_ylabel("Dim2")
 st.pyplot(fig)
 
+# ======================
+# HEATMAP DE CONTRIBUCIONES EN MCA
+# ======================
 
+st.subheader("🔍 Contribuciones de las Variables Categóricas al MCA")
+
+# Obtener contribuciones a las dimensiones
+contribs = mca.column_contributions(X_cat_encoded_df)
+
+# Seleccionar contribuciones a Dim1 y Dim2
+contribs_selected = contribs[["0", "1"]]  # 0 = Dim1, 1 = Dim2
+contribs_selected.columns = ["Dim1", "Dim2"]
+
+# Ordenar por Dim1 para mejor visualización (opcional)
+contribs_sorted = contribs_selected.sort_values("Dim1", ascending=False)
+
+# Crear heatmap
+fig, ax = plt.subplots(figsize=(10, max(6, 0.3 * len(contribs_sorted))))
+sns.heatmap(contribs_sorted, cmap="YlGnBu", annot=True, fmt=".2f", ax=ax)
+ax.set_title("Contribuciones de las Variables a las Dimensiones del MCA")
+st.pyplot(fig)
 
 
 
