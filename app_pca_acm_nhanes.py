@@ -236,10 +236,10 @@ numeric_features = df.select_dtypes(include=["float64", "int64"]).columns.tolist
 categorical_features = df.select_dtypes(include=["object", "category"]).columns.tolist()
 
 # Excluir variable objetivo si quedó en alguna
-if 'condition' in numeric_features:
-    numeric_features.remove('condition')
-if 'condition' in categorical_features:
-    categorical_features.remove('condition')
+if 'Condition' in numeric_features:
+    numeric_features.remove('Condition')
+if 'Condition' in categorical_features:
+    categorical_features.remove('Condition')
 
 # Subconjuntos
 X_num = df[numeric_features]
