@@ -20,20 +20,45 @@ st.title("PCA and MCA Analysis with Feature Selection - NHANES")
 
 @st.cache_data
 def load_data():
-    url = "https://raw.githubusercontent.com/jflorez-giraldo/Nhanes-streamlit/refs/heads/main/NHANES_Select_Chronic_Conditions_Prevalence_Estimates.csv"
+    url = "https://raw.githubusercontent.com/jflorez-giraldo/Nhanes-streamlit/nhanes_2015_2016.csv"
     df = pd.read_csv(url)
     df.columns = df.columns.str.strip()
     return df
 
 df = load_data()
 
-df = df.rename(columns={
-    "Survey Years": "Year",
-    "Race and Hispanic Origin": "Race",
-    "Age Group": "AgeGroup",
-    "Percent": "Prevalence",
-    "Measure": "Condition"
-})
+col_map = {
+    "SEQN": "Participant ID",
+    "ALQ101": "Alcohol Intake - Past 12 months (Q1)",
+    "ALQ110": "Alcohol Frequency",
+    "ALQ130": "Alcohol Amount",
+    "SMQ020": "Smoking Status",
+    "RIAGENDR": "Gender",
+    "RIDAGEYR": "Age (years)",
+    "RIDRETH1": "Race/Ethnicity",
+    "DMDCITZN": "Citizenship",
+    "DMDEDUC2": "Education Level",
+    "DMDMARTL": "Marital Status",
+    "DMDHHSIZ": "Household Size",
+    "WTINT2YR": "Interview Weight",
+    "SDMVPSU": "Masked PSU",
+    "SDMVSTRA": "Masked Stratum",
+    "INDFMPIR": "Income to Poverty Ratio",
+    "BPXSY1": "Systolic BP1",
+    "BPXDI1": "Diastolic BP1",
+    "BPXSY2": "Systolic BP2",
+    "BPXDI2": "Diastolic BP2",
+    "BMXWT": "Body Weight",
+    "BMXHT": "Body Height",
+    "BMXBMI": "Body Mass Index",
+    "BMXLEG": "Leg Length",
+    "BMXARML": "Arm Length",
+    "BMXARMC": "Arm Circumference",
+    "BMXWAIST": "Waist Circumference",
+    "HIQ210": "Health Insurance Coverage"
+}
+
+df = df.rename(columns=col_map)
 
 # Mostrar tipos de variables
 st.subheader("Resumen del tipo de variables")
