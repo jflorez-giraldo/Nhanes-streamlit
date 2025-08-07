@@ -16,7 +16,7 @@ import seaborn as sns
 import mca
 
 st.set_page_config(page_title="PCA & ACM con Selección de Variables", layout="wide")
-st.title("Análisis PCA y ACM con Selección de Variables - NHANES")
+st.title("PCA and MCA Analysis with Feature Selection - NHANES")
 
 @st.cache_data
 def load_data():
@@ -38,11 +38,11 @@ df = df.rename(columns={
 # Filtros
 with st.sidebar:
     st.header("Filters")
-    sex_filter = st.multiselect("Sexo", sorted(df["Sex"].dropna().unique()))
-    race_filter = st.multiselect("Raza/Origen", sorted(df["Race"].dropna().unique()))
-    condition_filter = st.multiselect("Condición", sorted(df["Condition"].dropna().unique()))
-    st.markdown("---")
-    k_vars = st.slider("Número de variables a seleccionar", 2, 10, 5)
+    sex_filter = st.multiselect("Sex", sorted(df["Sex"].dropna().unique()))
+    race_filter = st.multiselect("Race", sorted(df["Race"].dropna().unique()))
+    condition_filter = st.multiselect("Condition", sorted(df["Condition"].dropna().unique()))
+    #st.markdown("---")
+    #k_vars = st.slider("Number of variables to select", 2, 10, 5)
 
 # Aplicar filtros
 for col, values in {
@@ -52,12 +52,68 @@ for col, values in {
         df = df[df[col].isin(values)]
 
 if df.empty:
-    st.warning("No hay datos tras aplicar los filtros.")
+    st.warning("No data available after applying filters.")
     st.stop()
 
 # Mostrar primeros 10 registros del DataFrame filtrado
-st.subheader("Vista Preliminar de los Datos Filtrados")
+st.subheader("Preview of Filtered Data")
 st.dataframe(df.head(10))
+
+# -----------------------------
+# Preprocesamiento para PCA
+# -----------------------------
+st.subheader("PCA Analysis")
+
+# Variables predictoras
+num_cols = ["Prevalence", "Standard Error", "Lower 95% CI Limit", "Upper 95% CI Limit"]
+cat_cols = ["Sex", "Race", "AgeGroup"]
+
+X_num = df[num_cols]
+X_cat = df[cat_cols]
+
+# Preprocesamiento numérico
+numeric_pipeline = Pipeline([
+    ("imputer", SimpleImputer(strategy="mean")),
+    ("scaler", StandardScaler())
+])
+X_num_proc = numeric_pipeline.fit_transform(X_num)
+
+# Codificación categórica
+X_cat_proc = OneHotEncoder(sparse_output=False, handle_unknown="ignore").fit_transform(X_cat)
+
+# Concatenar numérico + categórico
+X_combined = np.hstack((X_num_proc, X_cat_proc))
+
+# Aplicar PCA
+pca = PCA(n_components=2)
+X_pca = pca.fit_transform(X_combined)
+
+# Crear DataFrame para loadings
+feature_names = num_cols + list(OneHotEncoder(sparse_output=False, handle_unknown="ignore").fit(X_cat).get_feature_names_out(cat_cols))
+loadings_df = pd.DataFrame(pca.components_.T, index=feature_names, columns=["PC1", "PC2"])
+
+# Mostrar loadings
+st.markdown("### PCA Loadings (Component Weights)")
+st.dataframe(loadings_df.style.format(precision=3))
+
+# Scatterplot de las 2 primeras componentes
+st.markdown("### PCA Scatter Plot (PC1 vs PC2)")
+fig, ax = plt.subplots(figsize=(8, 6))
+scatter = ax.scatter(X_pca[:, 0], X_pca[:, 1], alpha=0.7)
+ax.set_xlabel("Principal Component 1")
+ax.set_ylabel("Principal Component 2")
+ax.set_title("PCA Projection")
+st.pyplot(fig)
+
+
+
+
+
+
+
+
+
+
 
 ## Variables predictoras y objetivo
 #num_cols = ["Prevalence", "Standard Error", "Lower 95% CI Limit", "Upper 95% CI Limit"]
