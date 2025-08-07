@@ -367,7 +367,7 @@ st.pyplot(fig)
 
 # Separar por tipo
 x_num = df.select_dtypes(include=["float64", "int64"]).drop(columns=["SEQN"], errors="ignore")
-x_cat = df.select_dtypes(include=["object", "category", "bool", "str"])
+x_cat = df.select_dtypes(include=["object", "category", "bool", "string"])
 
 # Guardar nombres
 num_features = X_num.columns.tolist()
