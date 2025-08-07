@@ -114,6 +114,19 @@ category_mappings = {
         2: "No",
         7: "Refused",
         9: "Don't know"
+    },
+    "SDMVPSU": {
+        1: "PSU 1",
+        2: "PSU 2"
+    },
+    "DMDHHSIZ": {
+        1: "1 person",
+        2: "2 people",
+        3: "3 people",
+        4: "4 people",
+        5: "5 people",
+        6: "6 people",
+        7: "7 or more people"
     }
 }
 
