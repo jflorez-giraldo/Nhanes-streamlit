@@ -336,18 +336,30 @@ ax.axhline(0, linestyle='--', color='gray')
 ax.axvline(0, linestyle='--', color='gray')
 st.pyplot(fig)
 
-contribs = mca_result.columns_contrib_  # DataFrame con contribuciones de columnas
+# Obtener coordenadas de las columnas categóricas en el espacio factorial
+coords = mca_result.fs_c(N=6)  # shape (n_categories, n_components)
 
-# Ordenar las variables por su importancia total en los factores
-contribs["Total"] = contribs.iloc[:, :6].sum(axis=1)
+# Calcular contribución al cuadrado por dimensión
+contribs_array = coords ** 2
+
+# Convertir a DataFrame con los nombres de las columnas dummy
+contribs = pd.DataFrame(
+    contribs_array,
+    index=mca_result.cols,
+    columns=[f"F{i+1}" for i in range(contribs_array.shape[1])]
+)
+
+# (Opcional) Agregar columna con suma total de contribuciones
+contribs["Total"] = contribs.sum(axis=1)
+
+# Ordenar por importancia total
 contribs_sorted = contribs.sort_values(by="Total", ascending=False).drop(columns="Total")
 
-st.subheader("📊 MCA: Heatmap de Contribuciones a Factores")
+st.subheader("📊 MCA: Heatmap de Contribuciones por Categoría")
 
 fig, ax = plt.subplots(figsize=(10, 12))
 sns.heatmap(contribs_sorted.iloc[:, :6], annot=True, cmap="YlGnBu", ax=ax)
 st.pyplot(fig)
-
 
 
 
