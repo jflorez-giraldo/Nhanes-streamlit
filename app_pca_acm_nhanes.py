@@ -364,8 +364,8 @@ x_num = df.select_dtypes(include=["float64", "int64"]).drop(columns=["SEQN"], er
 x_cat = df.select_dtypes(include=["object", "category", "bool"])
 
 # Guardar nombres
-num_features = x_num.columns.tolist()
-cat_features = x_cat.columns.tolist()
+num_features = X_num.columns.tolist()
+cat_features = X_cat.columns.tolist()
 
 # Preprocesadores
 numeric_transformer = Pipeline(steps=[
