@@ -124,8 +124,9 @@ mca_model = mca.MCA(df_dummies)
 mca_coords = mca_model.fs_r(2)  # Primeras dos dimensiones
 
 # Visualización MCA
+condition_mca = df.loc[df_cat.index, "Condition"].reset_index(drop=True)
 mca_df = pd.DataFrame(mca_coords, columns=["Dim1", "Dim2"])
-mca_df["Condition"] = df["Condition"].values[:len(mca_df)]
+mca_df["Condition"] = condition_mca
 
 fig_mca, ax_mca = plt.subplots(figsize=(10, 6))
 sns.scatterplot(data=mca_df, x="Dim1", y="Dim2", hue="Condition", palette="Set2", ax=ax_mca)
