@@ -103,8 +103,9 @@ else:
 
 # --- MCA ---
 st.subheader("MCA (Categorical Features)")
-df_cat = df[categorical_cols].astype(str)
-mca_model = mca.MCA(df_cat)
+df_cat = df[categorical_cols].astype("category")
+df_cat_dummies = pd.get_dummies(df_cat)  # <- convierte a one-hot
+mca_model = mca.MCA(df_cat_dummies)
 mca_coords = mca_model.fs_r(N=2)
 
 fig2, ax2 = plt.subplots()
