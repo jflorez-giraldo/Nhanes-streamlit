@@ -301,9 +301,17 @@ class MCA_Transformer(BaseEstimator, TransformerMixin):
         self.n_components = n_components
 
     def fit(self, X, y=None):
+        # Asegurar que X es un DataFrame con nombres de columnas
+        if isinstance(X, pd.DataFrame):
+            self.feature_names_in_ = X.columns
+        else:
+            raise ValueError("MCA_Transformer requiere que X sea un DataFrame")
+
         self.encoder = OneHotEncoder(handle_unknown='ignore', sparse=False)
         X_encoded = self.encoder.fit_transform(X)
-        self.columns_ = self.encoder.get_feature_names_out(X.columns)
+    
+        # Guardar nombres de columnas codificadas
+        self.columns_ = self.encoder.get_feature_names_out(self.feature_names_in_)
         df_encoded = pd.DataFrame(X_encoded, columns=self.columns_)
         self.mca_result_ = mca.MCA(df_encoded)
         return self
