@@ -79,31 +79,37 @@ numeric_pipeline = Pipeline([
 X_num_proc = numeric_pipeline.fit_transform(X_num)
 
 # Codificación categórica
-X_cat_proc = OneHotEncoder(sparse_output=False, handle_unknown="ignore").fit_transform(X_cat)
+encoder = OneHotEncoder(sparse_output=False, handle_unknown="ignore")
+X_cat_proc = encoder.fit_transform(X_cat)
 
 # Concatenar numérico + categórico
 X_combined = np.hstack((X_num_proc, X_cat_proc))
+feature_names = num_cols + list(encoder.get_feature_names_out(cat_cols))
 
-# Aplicar PCA
-pca = PCA(n_components=2)
+# Aplicar PCA con más componentes
+n_components = min(6, X_combined.shape[1])  # máximo 6 componentes o menos si hay pocas columnas
+pca = PCA(n_components=n_components)
 X_pca = pca.fit_transform(X_combined)
 
-# Crear DataFrame para loadings
-feature_names = num_cols + list(OneHotEncoder(sparse_output=False, handle_unknown="ignore").fit(X_cat).get_feature_names_out(cat_cols))
-loadings_df = pd.DataFrame(pca.components_.T, index=feature_names, columns=["PC1", "PC2"])
+# Loadings (componentes principales)
+loadings_df = pd.DataFrame(pca.components_.T, index=feature_names,
+                           columns=[f"PC{i+1}" for i in range(n_components)])
 
-# Mostrar loadings
-st.markdown("### PCA Loadings (Component Weights)")
-st.dataframe(loadings_df.style.format(precision=3))
-
-# Scatterplot de las 2 primeras componentes
-st.markdown("### PCA Scatter Plot (PC1 vs PC2)")
-fig, ax = plt.subplots(figsize=(8, 6))
-scatter = ax.scatter(X_pca[:, 0], X_pca[:, 1], alpha=0.7)
-ax.set_xlabel("Principal Component 1")
-ax.set_ylabel("Principal Component 2")
-ax.set_title("PCA Projection")
+# Mostrar heatmap de loadings
+st.markdown("### Heatmap de PCA Loadings")
+fig, ax = plt.subplots(figsize=(10, max(6, len(feature_names) * 0.3)))
+sns.heatmap(loadings_df, cmap="coolwarm", center=0, annot=True, fmt=".2f", linewidths=0.5, ax=ax)
+ax.set_title("PCA Loadings Heatmap")
 st.pyplot(fig)
+
+# Scatterplot con PC1 y PC2
+st.markdown("### PCA Scatter Plot (PC1 vs PC2)")
+fig2, ax2 = plt.subplots(figsize=(8, 6))
+ax2.scatter(X_pca[:, 0], X_pca[:, 1], alpha=0.7)
+ax2.set_xlabel("Principal Component 1")
+ax2.set_ylabel("Principal Component 2")
+ax2.set_title("PCA Projection")
+st.pyplot(fig2)
 
 
 
