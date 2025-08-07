@@ -120,6 +120,38 @@ sns.scatterplot(data=pca_df, x="PC1", y="PC2", hue="Condition", palette="tab10",
 ax1.set_title("PCA con selección (RFE) + SMOTE")
 st.pyplot(fig1)
 
+
+# Extraer el modelo PCA del pipeline
+pca_model = pca_pipeline.named_steps["pca"]
+
+# Verifica si X tiene nombres de columnas (por si es numpy array)
+feature_names = X.columns if hasattr(X, 'columns') else [f"Var{i}" for i in range(X.shape[1])]
+
+# Calcular loadings
+loadings = pd.DataFrame(
+    pca_model.components_.T,
+    columns=[f"PC{i+1}" for i in range(pca_model.n_components_)],
+    index=feature_names
+)
+
+# Mostrar en Streamlit
+st.subheader("Loadings del PCA")
+st.dataframe(loadings.round(3))
+
+# Visualización (opcional)
+fig, ax = plt.subplots()
+for i in range(loadings.shape[0]):
+    ax.arrow(0, 0, loadings.iloc[i, 0], loadings.iloc[i, 1],
+             head_width=0.02, color='r')
+    ax.text(loadings.iloc[i, 0]*1.15, loadings.iloc[i, 1]*1.15,
+            loadings.index[i], ha='center', va='center')
+ax.set_xlabel("PC1")
+ax.set_ylabel("PC2")
+ax.set_title("Loadings: Contribución de las Variables")
+ax.grid()
+st.pyplot(fig)
+
+
 # ACM (MCA)
 st.subheader("ACM sobre variables categóricas")
 if X_cat.shape[0] >= 2:
