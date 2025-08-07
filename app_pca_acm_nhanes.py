@@ -105,14 +105,16 @@ cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
 model = LogisticRegression(max_iter=1000)
 
 score_filter = cross_val_score(model, X_kbest, y, cv=cv).mean()
-X_np = np.array(X_combined)
 selected_features = np.argsort(importances)[-k_vars:]
-score_embed = cross_val_score(model, X_np[:, selected_features], y, cv=cv).mean()
+score_embed = cross_val_score(model, X_combined.iloc[:, selected_features], y, cv=cv).mean()
 score_rfe = cross_val_score(model, X_rfe, y, cv=cv).mean()
 
 st.markdown(f"- **SelectKBest (filtro):** Accuracy promedio: {score_filter:.2f}")
 st.markdown(f"- **RandomForest (embebido):** Accuracy promedio: {score_embed:.2f}")
 st.markdown(f"- **RFE (envoltura):** Accuracy promedio: {score_rfe:.2f}")
+
+st.write("Forma de X_rfe:", X_rfe.shape)
+
 
 # PCA
 st.subheader("PCA con Variables Seleccionadas (RFE + SMOTE)")
