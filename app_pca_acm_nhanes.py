@@ -254,6 +254,20 @@ numeric_pipeline = Pipeline(steps=[
 
 X_num_pca = numeric_pipeline.fit_transform(X_num)
 
+# 1. DataFrame con componentes principales
+pca_df = pd.DataFrame(X_num_pca, columns=[f"PC{i+1}" for i in range(6)])
+pca_df["Condition"] = df["condition"].values  # o usa y si es separado
+
+# 2. Scatterplot PC1 vs PC2 coloreado por condición
+plt.figure(figsize=(8, 6))
+sns.scatterplot(data=pca_df, x="PC1", y="PC2", hue="Condition", palette="Set2", alpha=0.8)
+plt.title("PCA - PC1 vs PC2")
+plt.xlabel("PC1")
+plt.ylabel("PC2")
+plt.legend(title="Condition", bbox_to_anchor=(1.05, 1), loc="upper left")
+plt.tight_layout()
+plt.show()
+
 # Custom transformer para MCA
 class MCA_Transformer(BaseEstimator, TransformerMixin):
     def __init__(self, n_components=6):
