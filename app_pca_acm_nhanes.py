@@ -335,6 +335,8 @@ st.subheader("🔍 Contribuciones de las Variables Categóricas al MCA")
 # Obtener contribuciones a las dimensiones
 contribs = mca.column_contributions_
 
+st.write("Column names in contributions DataFrame:", contribs.columns.tolist())
+
 # Seleccionar contribuciones a Dim1 y Dim2
 contribs_selected = contribs[["0", "1"]]  # 0 = Dim1, 1 = Dim2
 contribs_selected.columns = ["Dim1", "Dim2"]
