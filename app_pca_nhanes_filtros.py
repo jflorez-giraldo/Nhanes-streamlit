@@ -9,6 +9,8 @@ from sklearn.decomposition import PCA
 from imblearn.pipeline import Pipeline  # ← esto es lo importante
 #from imblearn.pipeline import Pipeline as ImbPipeline
 from imblearn.over_sampling import ADASYN
+from sklearn.compose import ColumnTransformer
+from sklearn.preprocessing import OneHotEncoder
 import matplotlib.pyplot as plt
 import seaborn as sns
 import mca
@@ -83,19 +85,40 @@ if df["Condition"].nunique() <= 1:
     st.stop()
 
 # Preparar datos para PCA
-X = df[["Percent", "Survey Years", "Sex", "Age Group", "Race and Hispanic Origin", 
-    "Measure", "Percent", "Standard Error", "Lower 95% CI Limit", 
-    "Upper 95% CI Limit"]].copy()
+# Variables numéricas y categóricas
+numerical_cols = ["Prevalence", "Standard Error", "Lower 95% CI Limit", "Upper 95% CI Limit"]
+categorical_cols = ["Year", "Sex", "AgeGroup", "Race", "Condition"]
+
+# Redefinir X e y (sin duplicar columnas y usando nombres ya renombrados)
+X = df[numerical_cols + ["Year", "Sex", "AgeGroup", "Race"]].copy()
 y = df["Condition"]
 
-# Pipeline con ADASYN y PCA
+# Validar datos
+if X.isnull().any().any():
+    st.error("Hay valores faltantes en los datos numéricos o categóricos.")
+    st.stop()
+
+class_counts = y.value_counts()
+if (class_counts < 6).any():
+    st.error("Al menos una clase tiene menos de 6 muestras. ADASYN requiere al menos 6 por clase.")
+    st.stop()
+
+# Preprocesamiento: codificación de variables categóricas
+preprocessor = ColumnTransformer(
+    transformers=[
+        ("num", StandardScaler(), numerical_cols),
+        ("cat", OneHotEncoder(drop="first", sparse=False, handle_unknown="ignore"), ["Year", "Sex", "AgeGroup", "Race"])
+    ]
+)
+
+# Pipeline completo
 pca_pipeline = Pipeline([
-    ("imputer", IterativeImputer(random_state=42)),
-    ("scaler", StandardScaler()),
+    ("preprocess", preprocessor),
     ("adasyn", ADASYN(random_state=42)),
     ("pca", PCA(n_components=2))
 ])
 
+# Aplicar pipeline
 X_pca, y_pca = pca_pipeline.fit_resample(X, y)
 
 # Visualización PCA
@@ -105,7 +128,7 @@ pca_df["Condition"] = y_pca
 st.subheader("Visualización PCA")
 fig_pca, ax_pca = plt.subplots(figsize=(10, 6))
 sns.scatterplot(data=pca_df, x="PC1", y="PC2", hue="Condition", palette="tab10", ax=ax_pca)
-ax_pca.set_title("PCA con balanceo ADASYN")
+ax_pca.set_title("PCA con balanceo ADASYN y codificación")
 st.pyplot(fig_pca)
 
 # MCA
