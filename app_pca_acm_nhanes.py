@@ -290,9 +290,6 @@ numeric_pipeline = Pipeline(steps=[
 
 X_num_pca = numeric_pipeline.fit_transform(X_num)
 
-# Mostrar en Streamlit
-st.dataframe(df_safe)
-
 # 1. DataFrame con componentes principales
 pca_df = pd.DataFrame(X_num_pca, columns=[f"PC{i+1}" for i in range(6)])
 pca_df["Condition"] = df["Condition"].values  # o usa y si es separado
