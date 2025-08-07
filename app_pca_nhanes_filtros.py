@@ -60,10 +60,10 @@ with st.sidebar:
 
 # Aplicar filtros
 filters = {
-    "Year": year_filter,
+    #"Year": year_filter,
     "Sex": sex_filter,
     "Race": race_filter,
-    "AgeGroup": age_filter,
+    #"AgeGroup": age_filter,
     "Condition": condition_filter
 }
 
