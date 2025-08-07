@@ -246,6 +246,7 @@ else:
 
 # Separar variables
 y = df["Condition"]
+
 numeric_features = df.select_dtypes(include=["float64", "int64"]).columns.tolist()
 if 'Condition' in numeric_features:
     numeric_features.remove('Condition')
@@ -353,26 +354,42 @@ ax.set_title("Contribuciones de las Variables a las Dimensiones del MCA")
 st.pyplot(fig)
 
 
-st.header("🔍 Selección de Variables")
+# ======================
+# 🔧 Construir X
+# ======================
 
-# Parámetros globales
-cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
+# Separar por tipo
+x_num = df.select_dtypes(include=["float64", "int64"]).drop(columns=["SEQN"], errors="ignore")
+x_cat = df.select_dtypes(include=["object", "category", "bool"])
 
-# 1. Basada en modelos
-with st.expander("1️⃣ Selección basada en modelos (Random Forest)"):
-    model = RandomForestClassifier(random_state=42)
-    model.fit(X, y)
-    importances = pd.Series(model.feature_importances_, index=X.columns).sort_values(ascending=False)
+# Guardar nombres
+num_features = x_num.columns.tolist()
+cat_features = x_cat.columns.tolist()
 
-    st.subheader("Importancia de variables")
-    fig, ax = plt.subplots(figsize=(8, 5))
-    sns.barplot(x=importances, y=importances.index, ax=ax)
-    st.pyplot(fig)
+# Preprocesadores
+numeric_transformer = Pipeline(steps=[
+    ("imputer", SimpleImputer(strategy="mean")),
+    ("scaler", StandardScaler())
+])
 
-    # Validación cruzada
-    scores = cross_val_score(model, X, y, cv=cv)
-    st.write("Precisión promedio (CV):", np.round(scores.mean(), 3))
+categorical_transformer = Pipeline(steps=[
+    ("imputer", SimpleImputer(strategy="most_frequent")),
+    ("encoder", OneHotEncoder(handle_unknown="ignore", sparse_output=False))
+])
 
+# ColumnTransformer combinado
+preprocessor = ColumnTransformer(transformers=[
+    ("num", numeric_transformer, num_features),
+    ("cat", categorical_transformer, cat_features)
+])
+
+# Aplicar transformación
+X = preprocessor.fit_transform(df)
+
+# Obtener nombres de columnas después del preprocesamiento
+cat_encoded_columns = preprocessor.named_transformers_["cat"]["encoder"].get_feature_names_out(cat_features)
+X_columns = np.concatenate([num_features, cat_encoded_columns])
+X_df = pd.DataFrame(X, columns=X_columns)
 
 
 
