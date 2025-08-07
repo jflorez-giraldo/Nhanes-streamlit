@@ -325,10 +325,7 @@ class MCA_Transformer(BaseEstimator, TransformerMixin):
         return self.mca_result_
 
     def get_column_coords(self):
-        """ Devuelve coordenadas de las columnas codificadas (variables originales) """
-        cols = self.mca_result_.cols
-        return pd.DataFrame(cols, columns=[f"Dim{i+1}" for i in range(len(cols[0]))], index=self.columns_)
-
+        return self.mca_result_.fs_r()
 
 
 categorical_pipeline = Pipeline([
