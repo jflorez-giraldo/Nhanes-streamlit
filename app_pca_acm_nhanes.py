@@ -16,6 +16,7 @@ import seaborn as sns
 from mca import MCA  # Asegúrate de tener instalada la librería: pip install mca
 from sklearn.base import BaseEstimator, TransformerMixin
 import prince
+from sklearn.preprocessing import FunctionTransformer
 
 
 st.set_page_config(page_title="PCA Streamlit App", layout="wide")
@@ -322,9 +323,15 @@ class MCA_Transformer(BaseEstimator, TransformerMixin):
     def get_mca(self):
         return self.mca_result_
 
+to_int_df = FunctionTransformer(
+    lambda x: pd.DataFrame(x).astype(int),
+    feature_names_out='one-to-one'
+)
+
 categorical_pipeline = Pipeline(steps=[
     ("imputer", SimpleImputer(strategy="most_frequent")),
     ("encoder", OneHotEncoder(sparse_output=False, handle_unknown="ignore")),
+    ("to_int", to_int_df),
     ("mca", MCA_Transformer(n_components=6))
 ])
 
