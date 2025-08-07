@@ -128,7 +128,11 @@ else:
 st.subheader("MCA (Categorical Features)")
 df_cat = df[categorical_cols].astype(str)
 if df_cat.shape[0] > 2:
-    mca_model = mca.MCA(df_cat)
+    # Asegúrate de que df_cat tenga solo columnas categóricas
+    df_cat_encoded = pd.get_dummies(df_cat)
+
+    # Ahora puedes aplicar MCA
+    mca_model = mca.MCA(df_cat_encoded)
     mca_coords = mca_model.fs_r(N=2)
 
     fig2, ax2 = plt.subplots()
