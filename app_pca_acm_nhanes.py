@@ -52,56 +52,50 @@ print(df["Condition"].value_counts())
 # Diccionario de códigos por variable categórica
 category_mappings = {
     "RIAGENDR": {
-        1: "Hombre",
-        2: "Mujer"
+        1: "Male",
+        2: "Female"
     },
     "DMDMARTL": {
-        1: "Casado(a)",
-        2: "Divorciado(a)",
-        3: "Nunca casado(a)",
-        4: "Viudo(a)",
-        5: "Separado(a)",
-        6: "Vive con pareja",
-        77: "Rechazó",
-        99: "No sabe"
+        1: "Married",
+        2: "Divorced",
+        3: "Never married",
+        4: "Widowed",
+        5: "Separated",
+        6: "Living with partner",
+        77: "Refused",
+        99: "Don't know"
     },
     "DMDEDUC2": {
-        1: "Menos de 9º",
-        2: "9-11 sin diploma",
-        3: "Secundaria/GED",
-        4: "Algunos estudios universitarios",
-        5: "Universitario completo",
-        7: "Rechazó",
-        9: "No sabe"
+        1: "Less than 9th grade",
+        2: "9-11th grade (no diploma)",
+        3: "High school/GED",
+        4: "Some college or AA degree",
+        5: "College graduate or above",
+        7: "Refused",
+        9: "Don't know"
     },
     "SMQ020": {
-        1: "Sí",
+        1: "Yes",
         2: "No",
-        7: "Rechazó",
-        9: "No sabe"
+        7: "Refused",
+        9: "Don't know"
     },
     "ALQ101": {
-        1: "Sí",
+        1: "Yes",
         2: "No",
-        7: "Rechazó",
-        9: "No sabe"
+        7: "Refused",
+        9: "Don't know"
     },
     "ALQ110": {
-        1: "Todos los días",
-        2: "5–6 días por semana",
-        3: "3–4 días por semana",
-        4: "1–2 días por semana",
-        5: "2–3 días al mes",
-        6: "1 vez al mes o menos",
-        7: "Rechazó",
-        9: "No sabe"
+        1: "Every day",
+        2: "5–6 days/week",
+        3: "3–4 days/week",
+        4: "1–2 days/week",
+        5: "2–3 days/month",
+        6: "Once a month or less",
+        7: "Refused",
+        9: "Don't know"
     },
-    "HIQ210": {
-        1: "Sí",
-        2: "No",
-        7: "Rechazó",
-        9: "No sabe"
-    }
     "RIDRETH1": {
         1: "Mexican American",
         2: "Other Hispanic",
