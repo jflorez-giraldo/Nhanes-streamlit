@@ -167,6 +167,28 @@ info_df = pd.DataFrame({
 })
 st.dataframe(info_df)
 
+# Detección automática de variables categóricas
+categorical_vars = [col for col in df.columns 
+                    if df[col].dtype == 'object' or 
+                       df[col].nunique() <= 10]
+
+# Detección automática de variables categóricas
+categorical_vars = [col for col in df.columns 
+                    if df[col].dtype == 'object' or 
+                       df[col].nunique() <= 10]
+
+# Crear un DataFrame con las clases únicas por variable
+category_info = []
+for col in categorical_vars:
+    unique_vals = df[col].dropna().unique()
+    category_info.append({
+        "Variable": col,
+        "Unique Classes": ", ".join(map(str, sorted(unique_vals)))
+    })
+
+category_df = pd.DataFrame(category_info)
+
+
 # Filtros
 with st.sidebar:
     st.header("Filters")
