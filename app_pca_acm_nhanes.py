@@ -90,6 +90,7 @@ importances = forest.feature_importances_
 rfe_model = RFE(LogisticRegression(max_iter=1000), n_features_to_select=k_vars)
 rfe_model.fit(X_combined, y)
 X_rfe = rfe_model.transform(X_combined)
+X_rfe = np.atleast_2d(X_rfe)
 
 # Validación cruzada
 cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
@@ -110,7 +111,11 @@ pca_pipeline = ImbPipeline([
     ("scaler", StandardScaler()),
     ("pca", PCA(n_components=2))
 ])
-X_pca, y_pca = pca_pipeline.fit_resample(X_rfe, y)
+try:
+    X_pca, y_pca = pca_pipeline.fit_resample(X_rfe, y)
+except ValueError as e:
+    st.error(f"Error al aplicar SMOTE: {e}")
+    st.stop()
 
 pca_df = pd.DataFrame(X_pca, columns=["PC1", "PC2"])
 pca_df["Condition"] = y_pca
