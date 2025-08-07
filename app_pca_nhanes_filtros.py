@@ -31,7 +31,7 @@ def load_data():
 
 df = load_data()
 
-# Renombrar columnas mínimamente necesarias
+# Renombrar columnas para mantener consistencia
 df = df.rename(columns={
     "Age Group": "AgeGroup",
     "Race and Hispanic Origin": "Race and Hispanic origin",
@@ -63,6 +63,7 @@ st.dataframe(df.head())
 # --- Selección de columnas ---
 categorical_cols = ["AgeGroup", "Sex", "Race and Hispanic origin"]
 numerical_cols = ["Percent", "Standard Error", "95% CI Lower", "95% CI Upper"]
+
 subset_cols = numerical_cols + categorical_cols + ["Measure"]
 subset_cols = [col for col in subset_cols if col in df.columns]
 df = df.dropna(subset=subset_cols)
@@ -70,6 +71,7 @@ df = df.dropna(subset=subset_cols)
 for col in numerical_cols:
     df[col] = pd.to_numeric(df[col], errors='coerce')
 
+# Encode target variable
 target = "Measure"
 le = LabelEncoder()
 df[target] = le.fit_transform(df[target])
@@ -79,15 +81,15 @@ y = df[target]
 
 # --- PCA ---
 st.subheader("PCA (Numerical Features)")
-pca_pipeline = ImbPipeline([
+balance_pipeline = ImbPipeline([
     ("imputer", IterativeImputer(random_state=42)),
     ("scaler", StandardScaler()),
     ("adasyn", ADASYN(random_state=42))
 ])
+pca = PCA(n_components=2)
 
 if len(np.unique(y)) > 1:
-    X_balanced, y_balanced = pca_pipeline.fit_resample(X_num, y)
-    pca = PCA(n_components=2)
+    X_balanced, y_balanced = balance_pipeline.fit_resample(X_num, y)
     X_pca = pca.fit_transform(X_balanced)
 
     fig1, ax1 = plt.subplots()
@@ -103,9 +105,8 @@ else:
 
 # --- MCA ---
 st.subheader("MCA (Categorical Features)")
-df_cat = df[categorical_cols].astype("category")
-df_cat_dummies = pd.get_dummies(df_cat)  # <- convierte a one-hot
-mca_model = mca.MCA(df_cat_dummies)
+df_cat = df[categorical_cols].astype(str)
+mca_model = mca.MCA(df_cat)
 mca_coords = mca_model.fs_r(N=2)
 
 fig2, ax2 = plt.subplots()
