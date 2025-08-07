@@ -329,23 +329,24 @@ X_cat_mca = categorical_pipeline.fit_transform(X_cat)
 # Extraer el objeto MCA después del pipeline
 mca_result = categorical_pipeline.named_steps["mca"].get_mca()
 
+# Obtener coordenadas de columnas (loadings)
 coords = pd.DataFrame(
     mca_result.cols,
-    columns=[f"Dim{i+1}" for i in range(len(mca_model.L))]
+    columns=[f"Dim{i+1}" for i in range(len(mca_result.L))]
 )
 
-# Si tienes los nombres originales de las variables codificadas (OneHot)
-coords.index = X_encoded_df.columns
+# Asignar nombres de columnas codificadas
+coords.index = X_encoded_df.columns  # <- Asegúrate que X_encoded_df existe y es correcto
 
-# Ordenar las coordenadas por magnitud absoluta para la primera dimensión (opcional)
+# Ordenar por contribución en la primera dimensión (opcional)
 coords_sorted = coords.reindex(coords["Dim1"].abs().sort_values(ascending=False).index)
 
+# Visualizar con heatmap
 plt.figure(figsize=(10, 8))
 sns.heatmap(coords_sorted, cmap="coolwarm", center=0, annot=True)
 plt.title("MCA - Column Coordinates (loadings)")
 plt.tight_layout()
 plt.show()
-
 
 
 
