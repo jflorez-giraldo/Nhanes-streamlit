@@ -18,6 +18,7 @@ from sklearn.base import BaseEstimator, TransformerMixin
 import prince
 from sklearn.preprocessing import FunctionTransformer
 from sklearn.feature_selection import SequentialFeatureSelector
+from sklearn.compose import ColumnTransformer
 
 
 st.set_page_config(page_title="PCA Streamlit App", layout="wide")
@@ -390,6 +391,72 @@ X = preprocessor.fit_transform(df)
 cat_encoded_columns = preprocessor.named_transformers_["cat"]["encoder"].get_feature_names_out(cat_features)
 X_columns = np.concatenate([num_features, cat_encoded_columns])
 X_df = pd.DataFrame(X, columns=X_columns)
+
+# ======================
+# 🔍 Sección de selección de variables
+# ======================
+
+st.header("🔍 Selección de Variables con Validación Cruzada")
+
+cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
+
+# 1. Basada en modelos
+with st.expander("1️⃣ Selección basada en modelos (Random Forest)"):
+    model = RandomForestClassifier(random_state=42)
+    model.fit(X_df, y)
+    importances = pd.Series(model.feature_importances_, index=X_df.columns).sort_values(ascending=False)
+
+    st.subheader("Importancia de variables")
+    fig, ax = plt.subplots(figsize=(8, 5))
+    sns.barplot(x=importances, y=importances.index, ax=ax)
+    ax.set_title("Importancia de Variables - Random Forest")
+    st.pyplot(fig)
+
+    scores = cross_val_score(model, X_df, y, cv=cv)
+    st.write("Precisión promedio (CV):", np.round(scores.mean(), 3))
+
+# 2. Método de filtrado
+with st.expander("2️⃣ Selección por filtrado (SelectKBest - ANOVA F-value)"):
+    k = st.slider("Número de variables a seleccionar", 1, len(X_df.columns), 10)
+    selector = SelectKBest(score_func=f_classif, k=k)
+    selector.fit(X_df, y)
+    scores = pd.Series(selector.scores_, index=X_df.columns)
+    selected = scores.sort_values(ascending=False).head(k)
+
+    st.subheader("Top variables por F-score")
+    fig2, ax2 = plt.subplots(figsize=(8, 5))
+    sns.barplot(x=selected, y=selected.index, ax=ax2)
+    ax2.set_title("F-score ANOVA")
+    st.pyplot(fig2)
+
+    X_selected = selector.transform(X_df)
+    model = LogisticRegression(max_iter=1000)
+    scores = cross_val_score(model, X_selected, y, cv=cv)
+    st.write("Precisión promedio (CV):", np.round(scores.mean(), 3))
+
+# 3. Envoltura (RFE)
+with st.expander("3️⃣ Selección por envoltura (RFE - Logistic Regression)"):
+    num_feats = st.slider("Número de variables a seleccionar (RFE)", 1, len(X_df.columns), 5)
+    base_model = LogisticRegression(max_iter=1000)
+    rfe = RFE(estimator=base_model, n_features_to_select=num_feats)
+    rfe.fit(X_df, y)
+    selected_rfe = X_df.columns[rfe.support_]
+
+    st.subheader("Variables seleccionadas:")
+    st.write(list(selected_rfe))
+
+    scores = cross_val_score(base_model, X_df[selected_rfe], y, cv=cv)
+    st.write("Precisión promedio (CV):", np.round(scores.mean(), 3))
+
+    st.subheader("Heatmap de correlación entre variables seleccionadas")
+    fig3, ax3 = plt.subplots(figsize=(6, 4))
+    sns.heatmap(X_df[selected_rfe].corr(), annot=True, cmap="coolwarm", ax=ax3)
+    ax3.set_title("Correlación entre variables seleccionadas")
+    st.pyplot(fig3)
+
+
+
+
 
 
 
