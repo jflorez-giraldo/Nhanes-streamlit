@@ -229,6 +229,23 @@ if df.empty:
 st.subheader("Preview of Filtered Data")
 st.dataframe(df.head(10))
 
+st.subheader("🔍 Column Type Checker")
+
+# Mostrar tipos de datos
+st.write("**Tipos originales de columnas:**")
+st.write(df.dtypes)
+
+# Identificar columnas potencialmente problemáticas
+problematic_cols = df.columns[df.dtypes == "object"].tolist()
+nullable_ints = df.columns[df.dtypes.astype(str).str.contains("Int64")].tolist()
+
+st.write("### ⚠️ Columnas potencialmente problemáticas para Arrow/Streamlit:")
+if problematic_cols or nullable_ints:
+    st.write("**Tipo 'object':**", problematic_cols)
+    st.write("**Tipo 'Int64' (nullable):**", nullable_ints)
+else:
+    st.success("✅ No hay columnas problemáticas detectadas.")
+
 # Variable objetivo
 y = df["Condition"]
 
