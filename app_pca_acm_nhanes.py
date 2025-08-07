@@ -413,7 +413,9 @@ st.header("🔍 Selección de Variables con Validación Cruzada")
 # 1️⃣ Separación estratificada
 # ============================
 # Separar variables predictoras y objetivo ANTES de codificar
-X = X_df.drop(columns=["Condition"])  # quitar la variable objetivo
+print(X_df.columns.tolist())
+
+#X = X_df.drop(columns=["Condition"])  # quitar la variable objetivo
 y = df["Condition"]
 
 # Codificar sólo X
