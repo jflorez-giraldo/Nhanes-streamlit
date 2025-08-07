@@ -87,7 +87,7 @@ X = df[["Prevalence"]].copy()
 y = df["Condition"]
 
 # Pipeline con ADASYN y PCA
-pca_pipeline = ImbPipeline([
+pca_pipeline = Pipeline([
     ("imputer", IterativeImputer(random_state=42)),
     ("scaler", StandardScaler()),
     ("adasyn", ADASYN(random_state=42)),
