@@ -168,5 +168,5 @@ else:
     st.warning("No hay suficientes datos para realizar el ACM.")
 
 st.markdown("---")
-st.markdown("**Fuente de datos:** NHANES - CDC.  
+st.markdown("**Fuente de datos:** NHANES - CDC.")  
 **Autor:** Jonathan Florez")
