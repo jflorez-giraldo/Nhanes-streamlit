@@ -323,39 +323,27 @@ categorical_pipeline = Pipeline(steps=[
     ("mca", MCA_Transformer(n_components=6))
 ])
 
+# Suponiendo que X_cat tiene las columnas categóricas originales
 X_cat_mca = categorical_pipeline.fit_transform(X_cat)
-mca_result = categorical_pipeline.named_steps["mca"].get_mca()
 
-X_cat_mca_df = pd.DataFrame(X_cat_mca, columns=[f"F{i+1}" for i in range(X_cat_mca.shape[1])])
-X_cat_mca_df["Condition"] = y.values  # Agregar variable objetivo
+# Obtener el MCA de prince
+mca_model = categorical_pipeline.named_steps["mca"].get_mca()
 
-st.subheader("🎯 MCA: Scatterplot Factor 1 vs Factor 2")
+# También puedes reconstruir los datos one-hot para usar con métodos de prince
+X_encoded = categorical_pipeline.named_steps["encoder"].transform(
+    categorical_pipeline.named_steps["imputer"].transform(X_cat)
+)
 
-fig, ax = plt.subplots(figsize=(8, 6))
-sns.scatterplot(data=X_cat_mca_df, x="F1", y="F2", hue="Condition", palette="tab10", alpha=0.7)
-ax.set_title("MCA - Factores principales 1 y 2")
-ax.axhline(0, linestyle='--', color='gray')
-ax.axvline(0, linestyle='--', color='gray')
-st.pyplot(fig)
+X_encoded_df = pd.DataFrame(X_encoded, columns=categorical_pipeline.named_steps["encoder"].get_feature_names_out())
 
-# Obtener contribuciones por variable original
-column_contribs = mca_result.column_contributions_
+# Coordenadas de columnas
+coords = mca_model.column_coordinates(X_encoded_df)
 
-# Ordenar por la primera componente
-ordered_cols = column_contribs[0].abs().sort_values(ascending=False).index
+# Correlaciones
+correlations = mca_model.column_correlations(X_encoded_df)
 
-# Reordenar DataFrame
-column_contribs_sorted = column_contribs.loc[ordered_cols]
-
-# Mostrar tabla
-st.markdown("### Contribuciones de columnas (MCA)")
-st.dataframe(column_contribs_sorted.astype(float), use_container_width=True)
-
-# Mostrar heatmap
-fig, ax = plt.subplots(figsize=(10, 6))
-sns.heatmap(column_contribs_sorted.astype(float), cmap="viridis", ax=ax)
-plt.title("Contribución de cada variable (OneHot) a las componentes de MCA")
-st.pyplot(fig)
+# Biplot si deseas
+mca_model.plot_coordinates(X=X_encoded_df, ax=None, figsize=(10, 8))
 
 
 
