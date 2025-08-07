@@ -49,6 +49,70 @@ df["condition"] = df.apply(assign_condition, axis=1)
 # Verificar distribución
 print(df["condition"].value_counts())
 
+# Diccionario de códigos por variable categórica
+category_mappings = {
+    "RIAGENDR": {
+        1: "Hombre",
+        2: "Mujer"
+    },
+    "DMDMARTL": {
+        1: "Casado(a)",
+        2: "Divorciado(a)",
+        3: "Nunca casado(a)",
+        4: "Viudo(a)",
+        5: "Separado(a)",
+        6: "Vive con pareja",
+        77: "Rechazó",
+        99: "No sabe"
+    },
+    "DMDEDUC2": {
+        1: "Menos de 9º",
+        2: "9-11 sin diploma",
+        3: "Secundaria/GED",
+        4: "Algunos estudios universitarios",
+        5: "Universitario completo",
+        7: "Rechazó",
+        9: "No sabe"
+    },
+    "SMQ020": {
+        1: "Sí",
+        2: "No",
+        7: "Rechazó",
+        9: "No sabe"
+    },
+    "ALQ101": {
+        1: "Sí",
+        2: "No",
+        7: "Rechazó",
+        9: "No sabe"
+    },
+    "ALQ110": {
+        1: "Todos los días",
+        2: "5–6 días por semana",
+        3: "3–4 días por semana",
+        4: "1–2 días por semana",
+        5: "2–3 días al mes",
+        6: "1 vez al mes o menos",
+        7: "Rechazó",
+        9: "No sabe"
+    },
+    "HIQ210": {
+        1: "Sí",
+        2: "No",
+        7: "Rechazó",
+        9: "No sabe"
+    }
+}
+
+def apply_categorical_mappings(df, mappings):
+    for col, mapping in mappings.items():
+        if col in df.columns:
+            df[col] = df[col].map(mapping)
+    return df
+
+df = load_data()
+df = apply_categorical_mappings(df, category_mappings)
+
 col_map = {
     "SEQN": "Participant ID",
     "ALQ101": "Alcohol Intake - Past 12 months (Q1)",
