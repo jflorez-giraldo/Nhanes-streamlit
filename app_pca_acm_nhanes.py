@@ -122,6 +122,12 @@ if isinstance(X_rfe, np.ndarray):
 # Resetear índice de y para que se alinee con X_rfe
 y = y.reset_index(drop=True)
 
+# Verifica si cada clase tiene suficientes muestras para SMOTE
+min_samples_per_class = y.value_counts().min()
+if min_samples_per_class < 6:
+    st.warning(f"No se puede aplicar SMOTE porque al menos una clase tiene menos de 6 muestras (actual: {min_samples_per_class}).")
+    st.stop()
+
 # PCA
 st.subheader("PCA con Variables Seleccionadas (RFE + SMOTE)")
 pca_pipeline = ImbPipeline([
