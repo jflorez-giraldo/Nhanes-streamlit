@@ -6,7 +6,8 @@ from sklearn.impute import IterativeImputer
 from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import PCA
 from sklearn.pipeline import Pipeline
-from imblearn.pipeline import Pipeline as ImbPipeline
+from imblearn.pipeline import Pipeline  # ← esto es lo importante
+#from imblearn.pipeline import Pipeline as ImbPipeline
 from imblearn.over_sampling import ADASYN
 import matplotlib.pyplot as plt
 import seaborn as sns
