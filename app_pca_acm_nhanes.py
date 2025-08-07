@@ -247,10 +247,10 @@ else:
     st.success("✅ No hay columnas problemáticas detectadas.")
 
 # Separar variables
-target_col = "Condition"
+#target_col = "Condition"
 
 # Evitar que la variable objetivo quede en X
-X = df.drop(columns=[target_col])
+#X = df.drop(columns=[target_col])
 y = df["Condition"]
 
 
