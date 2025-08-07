@@ -37,7 +37,7 @@ df = df.rename(columns={
 
 # Filtros
 with st.sidebar:
-    st.header("Filtros")
+    st.header("Filters")
     sex_filter = st.multiselect("Sexo", sorted(df["Sex"].dropna().unique()))
     race_filter = st.multiselect("Raza/Origen", sorted(df["Race"].dropna().unique()))
     condition_filter = st.multiselect("Condición", sorted(df["Condition"].dropna().unique()))
@@ -54,65 +54,6 @@ for col, values in {
 if df.empty:
     st.warning("No hay datos tras aplicar los filtros.")
     st.stop()
-
-# Variables predictoras y objetivo
-num_cols = ["Prevalence", "Standard Error", "Lower 95% CI Limit", "Upper 95% CI Limit"]
-cat_cols = ["Sex", "Race", "AgeGroup"]
-X_num = df[num_cols]
-X_cat = df[cat_cols]
-y = df["Condition"]
-
-# Pipeline numérico
-numeric_pipeline = Pipeline([
-    ("imputer", SimpleImputer(strategy="mean")),
-    ("scaler", StandardScaler())
-])
-
-# Preprocesamiento y codificación
-X_num_proc = numeric_pipeline.fit_transform(X_num)
-X_cat_proc = OneHotEncoder(sparse_output=False, handle_unknown="ignore").fit_transform(X_cat)
-X_combined = np.hstack((X_num_proc, X_cat_proc))
-
-# Selección de variables: filtro + embebido + envoltura
-st.subheader("Selección de Variables y Evaluación")
-
-# Filtro: SelectKBest
-selector_filter = SelectKBest(score_func=f_classif, k=k_vars)
-X_kbest = selector_filter.fit_transform(X_combined, y)
-
-# Embebido: RandomForest
-forest = RandomForestClassifier(n_estimators=100, random_state=42)
-forest.fit(X_combined, y)
-importances = forest.feature_importances_
-
-# Envoltura: RFE
-# Asegurar que y esté alineado con X_combined
-y = y.reset_index(drop=True)
-X_combined = pd.DataFrame(X_combined).reset_index(drop=True)
-
-# RFE: Envoltura
-rfe_model = RFE(LogisticRegression(max_iter=1000), n_features_to_select=k_vars)
-rfe_model.fit(X_combined, y)
-X_rfe = rfe_model.transform(X_combined)
-
-# Asegurar que X_rfe es 2D correctamente
-if X_rfe.ndim == 1:
-    X_rfe = X_rfe.reshape(-1, 1)
-
-# Validación cruzada
-cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
-model = LogisticRegression(max_iter=1000)
-
-score_filter = cross_val_score(model, X_kbest, y, cv=cv).mean()
-selected_features = np.argsort(importances)[-k_vars:]
-score_embed = cross_val_score(model, X_combined.iloc[:, selected_features], y, cv=cv).mean()
-score_rfe = cross_val_score(model, X_rfe, y, cv=cv).mean()
-
-st.markdown(f"- **SelectKBest (filtro):** Accuracy promedio: {score_filter:.2f}")
-st.markdown(f"- **RandomForest (embebido):** Accuracy promedio: {score_embed:.2f}")
-st.markdown(f"- **RFE (envoltura):** Accuracy promedio: {score_rfe:.2f}")
-
-# ... (todo el código anterior sin cambios)
 
 # Mostrar primeros 10 registros del DataFrame filtrado
 st.subheader("Vista Preliminar de los Datos Filtrados")
