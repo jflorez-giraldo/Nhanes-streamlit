@@ -52,10 +52,10 @@ df = df.rename(columns={
 # Filtros
 with st.sidebar:
     st.header("Filtros")
-    year_filter = st.multiselect("Años", sorted(df["Year"].dropna().unique()), default=None)
+    #year_filter = st.multiselect("Años", sorted(df["Year"].dropna().unique()), default=None)
     sex_filter = st.multiselect("Sexo", sorted(df["Sex"].dropna().unique()), default=None)
     race_filter = st.multiselect("Raza/Origen", sorted(df["Race"].dropna().unique()), default=None)
-    age_filter = st.multiselect("Grupo de Edad", sorted(df["AgeGroup"].dropna().unique()), default=None)
+    #age_filter = st.multiselect("Grupo de Edad", sorted(df["AgeGroup"].dropna().unique()), default=None)
     condition_filter = st.multiselect("Condición", sorted(df["Condition"].dropna().unique()), default=None)
 
 # Aplicar filtros
