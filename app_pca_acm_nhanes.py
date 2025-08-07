@@ -1,5 +1,6 @@
 import numpy as np
 import streamlit as st
+import pandas as pd
 from sklearn.preprocessing import StandardScaler, OneHotEncoder
 from sklearn.impute import SimpleImputer
 from sklearn.decomposition import PCA
