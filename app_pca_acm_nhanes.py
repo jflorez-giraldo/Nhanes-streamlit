@@ -44,10 +44,10 @@ def assign_condition(row):
         return "healthy"
 
 # Crear la nueva columna
-df["condition"] = df.apply(assign_condition, axis=1)
+df["Condition"] = df.apply(assign_condition, axis=1)
 
 # Verificar distribución
-print(df["condition"].value_counts())
+print(df["Condition"].value_counts())
 
 # Diccionario de códigos por variable categórica
 category_mappings = {
@@ -102,6 +102,25 @@ category_mappings = {
         7: "Rechazó",
         9: "No sabe"
     }
+    "RIDRETH1": {
+        1: "Mexican American",
+        2: "Other Hispanic",
+        3: "Non-Hispanic White",
+        4: "Non-Hispanic Black",
+        5: "Other Race - Including Multi-Racial"
+    }
+    "DMDCITZN": {
+        1: "Citizen by birth or naturalization",
+        2: "Not a citizen of the U.S.",
+        7: "Refused",
+        9: "Don't know"
+    }
+    "HIQ210": {
+        1: "Yes",
+        2: "No",
+        7: "Refused",
+        9: "Don't know"
+    }
 }
 
 def apply_categorical_mappings(df, mappings):
@@ -110,7 +129,6 @@ def apply_categorical_mappings(df, mappings):
             df[col] = df[col].map(mapping)
     return df
 
-df = load_data()
 df = apply_categorical_mappings(df, category_mappings)
 
 col_map = {
@@ -158,15 +176,15 @@ st.dataframe(info_df)
 # Filtros
 with st.sidebar:
     st.header("Filters")
-    sex_filter = st.multiselect("Sex", sorted(df["Sex"].dropna().unique()))
-    race_filter = st.multiselect("Race", sorted(df["Race"].dropna().unique()))
+    Gender_filter = st.multiselect("Gender", sorted(df["Gender"].dropna().unique()))
+    race_filter = st.multiselect("Race/Ethnicity", sorted(df["Race/Ethnicity"].dropna().unique()))
     condition_filter = st.multiselect("Condition", sorted(df["Condition"].dropna().unique()))
     #st.markdown("---")
     #k_vars = st.slider("Number of variables to select", 2, 10, 5)
 
 # Aplicar filtros
 for col, values in {
-    "Sex": sex_filter, "Race": race_filter, "Condition": condition_filter
+    "Gender": sex_filter, "Race": race_filter, "Condition": condition_filter
 }.items():
     if values:
         df = df[df[col].isin(values)]
