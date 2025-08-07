@@ -44,9 +44,9 @@ st.write("Original dataset shape:", df.shape)
 # --- Sidebar filters ---
 st.sidebar.header("Filter data")
 
-if "AgeGroup" in df.columns:
-    age_group = st.sidebar.selectbox("Select Age Group", sorted(df["AgeGroup"].dropna().unique()))
-    df = df[df["AgeGroup"] == age_group]
+#if "AgeGroup" in df.columns:
+#    age_group = st.sidebar.selectbox("Select Age Group", sorted(df["AgeGroup"].dropna().unique()))
+#    df = df[df["AgeGroup"] == age_group]
 
 if "Sex" in df.columns:
     sex = st.sidebar.selectbox("Select Sex", sorted(df["Sex"].dropna().unique()))
