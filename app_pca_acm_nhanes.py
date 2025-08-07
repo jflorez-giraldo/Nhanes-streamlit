@@ -15,6 +15,8 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from mca import MCA  # Asegúrate de tener instalada la librería: pip install mca
 from sklearn.base import BaseEstimator, TransformerMixin
+import prince
+
 
 st.set_page_config(page_title="PCA Streamlit App", layout="wide")
 st.title("PCA and MCA Analysis with NHANES Data")
@@ -336,29 +338,23 @@ ax.axhline(0, linestyle='--', color='gray')
 ax.axvline(0, linestyle='--', color='gray')
 st.pyplot(fig)
 
-# Obtener coordenadas de las columnas categóricas en el espacio factorial
-coords = mca_result.fs_c(N=6)  # shape (n_categories, n_components)
+# Obtener contribuciones por variable original
+column_contribs = mca_result.column_contributions_
 
-# Calcular contribución al cuadrado por dimensión
-contribs_array = coords ** 2
+# Ordenar por la primera componente
+ordered_cols = column_contribs[0].abs().sort_values(ascending=False).index
 
-# Convertir a DataFrame con los nombres de las columnas dummy
-contribs = pd.DataFrame(
-    contribs_array,
-    index=mca_result.cols,
-    columns=[f"F{i+1}" for i in range(contribs_array.shape[1])]
-)
+# Reordenar DataFrame
+column_contribs_sorted = column_contribs.loc[ordered_cols]
 
-# (Opcional) Agregar columna con suma total de contribuciones
-contribs["Total"] = contribs.sum(axis=1)
+# Mostrar tabla
+st.markdown("### Contribuciones de columnas (MCA)")
+st.dataframe(column_contribs_sorted.astype(float), use_container_width=True)
 
-# Ordenar por importancia total
-contribs_sorted = contribs.sort_values(by="Total", ascending=False).drop(columns="Total")
-
-st.subheader("📊 MCA: Heatmap de Contribuciones por Categoría")
-
-fig, ax = plt.subplots(figsize=(10, 12))
-sns.heatmap(contribs_sorted.iloc[:, :6], annot=True, cmap="YlGnBu", ax=ax)
+# Mostrar heatmap
+fig, ax = plt.subplots(figsize=(10, 6))
+sns.heatmap(column_contribs_sorted.astype(float), cmap="viridis", ax=ax)
+plt.title("Contribución de cada variable (OneHot) a las componentes de MCA")
 st.pyplot(fig)
 
 
