@@ -59,47 +59,7 @@ if df.empty:
 st.subheader("Preview of Filtered Data")
 st.dataframe(df.head(10))
 
-st.subheader("PCA aplicado solo a variables numéricas")
 
-# 1. Seleccionar columnas numéricas
-numerical_cols = df.select_dtypes(include=['number']).columns.tolist()
-
-if len(numerical_cols) < 2:
-    st.warning("Se necesitan al menos dos variables numéricas para aplicar PCA.")
-    st.stop()
-
-# 2. Escalar
-scaler = StandardScaler()
-X_scaled = scaler.fit_transform(df[numerical_cols])
-
-# 3. PCA
-n_components = min(len(numerical_cols), 6)
-pca = PCA(n_components=n_components)
-X_pca = pca.fit_transform(X_scaled)
-
-# 6. Scatterplot de las dos primeras CPs
-st.write("Proyección PCA (primeras dos componentes):")
-fig2, ax2 = plt.subplots()
-scatter = ax2.scatter(X_pca[:, 0], X_pca[:, 1], alpha=0.6)
-ax2.set_xlabel("PC1")
-ax2.set_ylabel("PC2")
-ax2.set_title("PCA - Primeras dos componentes")
-st.pyplot(fig2)
-
-# 4. Mostrar varianza explicada
-explained_var = pca.explained_variance_ratio_
-st.write("Varianza explicada por cada componente:")
-st.bar_chart(explained_var)
-
-# 5. Mostrar loadings como heatmap
-loadings = pd.DataFrame(pca.components_.T, 
-                        columns=[f"PC{i+1}" for i in range(n_components)],
-                        index=numerical_cols)
-
-st.write("Cargas de las variables (Loadings):")
-fig, ax = plt.subplots(figsize=(10, 6))
-sns.heatmap(loadings, annot=True, cmap="coolwarm", center=0, ax=ax)
-st.pyplot(fig)
 
 
 
