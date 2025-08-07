@@ -43,17 +43,126 @@ def assign_condition(row):
 
 df["Condition"] = df.apply(assign_condition, axis=1)
 
-# Renombrar columnas para legibilidad
+# Diccionario de códigos por variable categórica
+category_mappings = {
+    "RIAGENDR": {
+        1: "Male",
+        2: "Female"
+    },
+    "DMDMARTL": {
+        1: "Married",
+        2: "Divorced",
+        3: "Never married",
+        4: "Widowed",
+        5: "Separated",
+        6: "Living with partner",
+        77: "Refused",
+        99: "Don't know"
+    },
+    "DMDEDUC2": {
+        1: "Less than 9th grade",
+        2: "9-11th grade (no diploma)",
+        3: "High school/GED",
+        4: "Some college or AA degree",
+        5: "College graduate or above",
+        7: "Refused",
+        9: "Don't know"
+    },
+    "SMQ020": {
+        1: "Yes",
+        2: "No",
+        7: "Refused",
+        9: "Don't know"
+    },
+    "ALQ101": {
+        1: "Yes",
+        2: "No",
+        7: "Refused",
+        9: "Don't know"
+    },
+    "ALQ110": {
+        1: "Every day",
+        2: "5–6 days/week",
+        3: "3–4 days/week",
+        4: "1–2 days/week",
+        5: "2–3 days/month",
+        6: "Once a month or less",
+        7: "Refused",
+        9: "Don't know"
+    },
+    "RIDRETH1": {
+        1: "Mexican American",
+        2: "Other Hispanic",
+        3: "Non-Hispanic White",
+        4: "Non-Hispanic Black",
+        5: "Other Race - Including Multi-Racial"
+    },
+    "DMDCITZN": {
+        1: "Citizen by birth or naturalization",
+        2: "Not a citizen of the U.S.",
+        7: "Refused",
+        9: "Don't know"
+    },
+    "HIQ210": {
+        1: "Yes",
+        2: "No",
+        7: "Refused",
+        9: "Don't know"
+    },
+    "SDMVPSU": {
+        1: "PSU 1",
+        2: "PSU 2"
+    },
+    "DMDHHSIZ": {
+        1: "1 person",
+        2: "2 people",
+        3: "3 people",
+        4: "4 people",
+        5: "5 people",
+        6: "6 people",
+        7: "7 or more people"
+    }
+}
+
+def apply_categorical_mappings(df, mappings):
+    for col, mapping in mappings.items():
+        if col in df.columns:
+            df[col] = df[col].map(mapping)
+    return df
+
+df = apply_categorical_mappings(df, category_mappings)
+
 col_map = {
+    "SEQN": "Participant ID",
+    "ALQ101": "Alcohol Intake - Past 12 months (Q1)",
+    "ALQ110": "Alcohol Frequency",
+    "ALQ130": "Alcohol Amount",
+    "SMQ020": "Smoking Status",
     "RIAGENDR": "Gender",
+    "RIDAGEYR": "Age (years)",
     "RIDRETH1": "Race/Ethnicity",
     "DMDCITZN": "Citizenship",
     "DMDEDUC2": "Education Level",
     "DMDMARTL": "Marital Status",
     "DMDHHSIZ": "Household Size",
+    "WTINT2YR": "Interview Weight",
     "SDMVPSU": "Masked PSU",
+    "SDMVSTRA": "Masked Stratum",
+    "INDFMPIR": "Income to Poverty Ratio",
+    "BPXSY1": "Systolic BP1",
+    "BPXDI1": "Diastolic BP1",
+    "BPXSY2": "Systolic BP2",
+    "BPXDI2": "Diastolic BP2",
+    "BMXWT": "Body Weight",
+    "BMXHT": "Body Height",
+    "BMXBMI": "Body Mass Index",
+    "BMXLEG": "Leg Length",
+    "BMXARML": "Arm Length",
+    "BMXARMC": "Arm Circumference",
+    "BMXWAIST": "Waist Circumference",
     "HIQ210": "Health Insurance Coverage"
 }
+
 df = df.rename(columns=col_map)
 
 # Asegurar compatibilidad con Arrow/Streamlit
