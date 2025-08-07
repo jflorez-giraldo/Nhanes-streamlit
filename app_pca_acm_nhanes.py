@@ -326,15 +326,18 @@ categorical_pipeline = Pipeline(steps=[
 # Suponiendo que X_cat tiene las columnas categóricas originales
 X_cat_mca = categorical_pipeline.fit_transform(X_cat)
 
-# Obtener el MCA de prince
-mca_model = categorical_pipeline.named_steps["mca"].get_mca()
+# Obtener nombres de columnas de OneHotEncoder
+encoder = categorical_pipeline.named_steps["encoder"]
+feature_names = encoder.get_feature_names_out()
 
-# También puedes reconstruir los datos one-hot para usar con métodos de prince
-X_encoded = categorical_pipeline.named_steps["encoder"].transform(
-    categorical_pipeline.named_steps["imputer"].transform(X_cat)
-)
+# Obtener datos imputados
+X_imputed = categorical_pipeline.named_steps["imputer"].transform(X_cat)
 
-X_encoded_df = pd.DataFrame(X_encoded, columns=categorical_pipeline.named_steps["encoder"].get_feature_names_out())
+# Transformar con OneHotEncoder
+X_encoded = encoder.transform(X_imputed)
+
+# Convertir a DataFrame
+X_encoded_df = pd.DataFrame(X_encoded, columns=feature_names)
 
 # Coordenadas de columnas
 coords = mca_model.column_coordinates(X_encoded_df)
