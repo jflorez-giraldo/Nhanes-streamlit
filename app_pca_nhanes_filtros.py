@@ -26,10 +26,24 @@ st.title("PCA, MCA and Feature Selection on NHANES Data")
 def load_data():
     url = "https://raw.githubusercontent.com/jflorez-giraldo/Nhanes-streamlit/main/NHANES_Select_Chronic_Conditions_Prevalence_Estimates.csv"
     df = pd.read_csv(url)
-    df.columns = df.columns.str.strip()  # Limpiar espacios en nombres de columnas
+    df.columns = df.columns.str.strip()
     return df
 
 df = load_data()
+
+# Mostrar columnas disponibles para depuración
+st.write("Columnas disponibles:", df.columns.tolist())
+
+# Verificar columnas críticas
+required_cols = [
+    "Age Group", "Sex", "Race and Hispanic Origin",
+    "Prevalence", "Standard Error", "Lower 95% CI Limit",
+    "Upper 95% CI Limit", "Measure"
+]
+missing_cols = [col for col in required_cols if col not in df.columns]
+if missing_cols:
+    st.error(f"Faltan columnas críticas en el CSV: {missing_cols}")
+    st.stop()
 
 # Renombrar columnas para mantener consistencia
 df = df.rename(columns={
@@ -70,11 +84,11 @@ subset_cols = numerical_cols + categorical_cols + ["Measure"]
 subset_cols = [col for col in subset_cols if col in df.columns]
 df = df.dropna(subset=subset_cols)
 
-# Convertir numéricas
+# Convertir columnas numéricas
 for col in numerical_cols:
     df[col] = pd.to_numeric(df[col], errors='coerce')
 
-# Encode target variable
+# Codificar variable objetivo
 target = "Measure"
 le = LabelEncoder()
 df[target] = le.fit_transform(df[target])
@@ -85,29 +99,28 @@ y = df[target]
 # --- PCA ---
 st.subheader("PCA (Numerical Features)")
 
-balance_pipeline = ImbPipeline([
+pca_pipeline = ImbPipeline([
     ("imputer", IterativeImputer(random_state=42)),
     ("scaler", StandardScaler()),
     ("adasyn", ADASYN(random_state=42))
 ])
 
 if len(np.unique(y)) > 1:
-    X_pca, y_balanced = pca_pipeline.fit_resample(X_num, y)
+    X_balanced, y_balanced = pca_pipeline.fit_resample(X_num, y)
+    pca = PCA(n_components=2)
+    X_pca = pca.fit_transform(X_balanced)
+
+    fig1, ax1 = plt.subplots()
+    scatter = ax1.scatter(X_pca[:, 0], X_pca[:, 1], c=y_balanced, cmap="viridis", alpha=0.6)
+    ax1.set_xlabel("PCA 1")
+    ax1.set_ylabel("PCA 2")
+    ax1.set_title("PCA with Preprocessing + ADASYN")
+    legend1 = ax1.legend(*scatter.legend_elements(), title="Condition")
+    ax1.add_artist(legend1)
+    st.pyplot(fig1)
 else:
-    st.warning("The selected filters result in only one class in the target variable. PCA and resampling require at least two classes.")
-    X_pca, y_balanced = None, None
-
-pca = PCA(n_components=2)
-X_pca = pca.fit_transform(X_balanced)
-
-fig1, ax1 = plt.subplots()
-scatter = ax1.scatter(X_pca[:, 0], X_pca[:, 1], c=y_balanced, cmap="viridis", alpha=0.6)
-ax1.set_xlabel("PCA 1")
-ax1.set_ylabel("PCA 2")
-ax1.set_title("PCA with Preprocessing + ADASYN")
-legend1 = ax1.legend(*scatter.legend_elements(), title="Condition")
-ax1.add_artist(legend1)
-st.pyplot(fig1)
+    st.warning("La variable objetivo tiene solo una clase después del filtrado. Se requieren al menos dos clases para aplicar ADASYN y PCA.")
+    X_balanced, y_balanced = None, None
 
 # --- MCA ---
 st.subheader("MCA (Categorical Features)")
@@ -125,49 +138,62 @@ st.pyplot(fig2)
 
 # --- Feature Importance ---
 st.subheader("Feature Importance (Random Forest)")
-rf = RandomForestClassifier(n_estimators=100, random_state=42)
-rf.fit(X_num, y)
-importances = rf.feature_importances_
 
-importance_df = pd.DataFrame({
-    "Feature": numerical_cols,
-    "Importance": importances
-}).sort_values("Importance", ascending=False)
+if len(np.unique(y)) > 1:
+    rf = RandomForestClassifier(n_estimators=100, random_state=42)
+    rf.fit(X_num, y)
+    importances = rf.feature_importances_
 
-fig3, ax3 = plt.subplots()
-sns.barplot(data=importance_df, x="Importance", y="Feature", ax=ax3)
-ax3.set_title("Feature Importance")
-st.pyplot(fig3)
+    importance_df = pd.DataFrame({
+        "Feature": numerical_cols,
+        "Importance": importances
+    }).sort_values("Importance", ascending=False)
+
+    fig3, ax3 = plt.subplots()
+    sns.barplot(data=importance_df, x="Importance", y="Feature", ax=ax3)
+    ax3.set_title("Feature Importance")
+    st.pyplot(fig3)
+else:
+    st.warning("Random Forest requiere más de una clase en la variable objetivo.")
 
 # --- Correlation with Target ---
 st.subheader("Correlation with Target")
-correlations = [np.corrcoef(X_num[col], y)[0, 1] for col in numerical_cols]
-corr_df = pd.DataFrame({
-    "Feature": numerical_cols,
-    "Abs Correlation": np.abs(correlations)
-}).sort_values("Abs Correlation", ascending=False)
 
-fig4, ax4 = plt.subplots()
-sns.barplot(data=corr_df, x="Abs Correlation", y="Feature", ax=ax4)
-ax4.set_title("Absolute Correlation with Condition")
-st.pyplot(fig4)
+if len(np.unique(y)) > 1:
+    correlations = [np.corrcoef(X_num[col], y)[0, 1] for col in numerical_cols]
+    corr_df = pd.DataFrame({
+        "Feature": numerical_cols,
+        "Abs Correlation": np.abs(correlations)
+    }).sort_values("Abs Correlation", ascending=False)
+
+    fig4, ax4 = plt.subplots()
+    sns.barplot(data=corr_df, x="Abs Correlation", y="Feature", ax=ax4)
+    ax4.set_title("Absolute Correlation with Condition")
+    st.pyplot(fig4)
+else:
+    st.warning("No se puede calcular la correlación con una única clase.")
 
 # --- Recursive Feature Elimination ---
 st.subheader("Recursive Feature Elimination (RFE)")
-rfe_pipe = Pipeline([
-    ("imputer", SimpleImputer()),
-    ("scaler", StandardScaler()),
-    ("rfe", RFE(LogisticRegression(max_iter=1000), n_features_to_select=3))
-])
-rfe_pipe.fit(X_num, y)
-rfe_selected = rfe_pipe.named_steps["rfe"].support_
-rfe_ranking = rfe_pipe.named_steps["rfe"].ranking_
 
-rfe_df = pd.DataFrame({
-    "Feature": numerical_cols,
-    "Selected": rfe_selected,
-    "Ranking": rfe_ranking
-})
-st.dataframe(rfe_df.sort_values("Ranking"))
+if len(np.unique(y)) > 1:
+    rfe_pipe = Pipeline([
+        ("imputer", SimpleImputer()),
+        ("scaler", StandardScaler()),
+        ("rfe", RFE(LogisticRegression(max_iter=1000), n_features_to_select=3))
+    ])
+    rfe_pipe.fit(X_num, y)
+    rfe_selected = rfe_pipe.named_steps["rfe"].support_
+    rfe_ranking = rfe_pipe.named_steps["rfe"].ranking_
+
+    rfe_df = pd.DataFrame({
+        "Feature": numerical_cols,
+        "Selected": rfe_selected,
+        "Ranking": rfe_ranking
+    })
+    st.dataframe(rfe_df.sort_values("Ranking"))
+else:
+    st.warning("RFE requiere más de una clase en la variable objetivo.")
+
 
 
