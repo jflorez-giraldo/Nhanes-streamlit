@@ -296,72 +296,40 @@ fig, ax = plt.subplots(figsize=(10, 12))
 sns.heatmap(loadings_df_sorted, annot=True, cmap="coolwarm", center=0, ax=ax)
 st.pyplot(fig)
 
-class MCA_Transformer(BaseEstimator, TransformerMixin):
-    def __init__(self, n_components=2):
-        self.n_components = n_components
 
-    def fit(self, X, y=None):
-        # Si es un array, convertirlo a DataFrame con nombres conocidos
-        if not isinstance(X, pd.DataFrame):
-            if hasattr(self, 'feature_names_in_'):
-                X = pd.DataFrame(X, columns=self.feature_names_in_)
-            else:
-                raise ValueError("MCA_Transformer requiere que X sea un DataFrame o debe definirse feature_names_in_ antes.")
 
-        # Guardar los nombres originales de las columnas para usarlos en transform
-        self.feature_names_in_ = X.columns
 
-        # Codificación OneHot
-        self.encoder = OneHotEncoder(handle_unknown='ignore', sparse=False)
-        X_encoded = self.encoder.fit_transform(X)
 
-        # Obtener nombres de columnas codificadas
-        self.columns_ = self.encoder.get_feature_names_out(self.feature_names_in_)
-        df_encoded = pd.DataFrame(X_encoded, columns=self.columns_)
 
-        # Aplicar MCA
-        self.mca_result_ = MCA(df_encoded)
-        return self
-
-    def transform(self, X):
-        if not isinstance(X, pd.DataFrame):
-            X = pd.DataFrame(X, columns=self.feature_names_in_)
-        X_encoded = self.encoder.transform(X)
-        df_encoded = pd.DataFrame(X_encoded, columns=self.columns_)
-        return self.mca_result_.fs_r(N=df_encoded.shape[0])
-
-    def get_column_coords(self):
-        coords = pd.DataFrame(self.mca_result_.fs_c[:, :self.n_components],
-                              columns=[f"Dim{i+1}" for i in range(self.n_components)])
-        coords.index = self.columns_
-        return coords
-
-# Antes de pasar al pipeline
-assert isinstance(X_cat, pd.DataFrame), "X_cat debe ser un DataFrame"
-
-categorical_pipeline = Pipeline([
+# Pipeline para MCA con prince
+categorical_pipeline = Pipeline(steps=[
     ("imputer", SimpleImputer(strategy="most_frequent")),
-    ("mca", MCA_Transformer(n_components=2))
+    ("encoder", OneHotEncoder(handle_unknown="ignore", sparse=False))
 ])
 
+# Transformar datos categóricos
+X_cat_encoded = categorical_pipeline.fit_transform(X_cat)
 
-# Fit y transform
-X_cat_mca = categorical_pipeline.fit_transform(X_cat)
+# Crear DataFrame con nombres de columnas después del one-hot encoding
+encoded_columns = categorical_pipeline.named_steps["encoder"].get_feature_names_out(X_cat.columns)
+X_cat_encoded_df = pd.DataFrame(X_cat_encoded, columns=encoded_columns, index=X_cat.index)
 
-# Obtener coordenadas de las variables después del ajuste
-mca_model = categorical_pipeline.named_steps['mca']
-coords = mca_model.get_column_coords()
+# Aplicar MCA con prince
+mca = prince.MCA(n_components=2, random_state=42)
+X_cat_mca = mca.fit_transform(X_cat_encoded_df)
 
-# Ordenar por importancia en la primera dimensión
-coords_sorted = coords.reindex(coords["Dim1"].abs().sort_values(ascending=False).index)
+# Agregar columna de condición para colorear
+mca_df = X_cat_mca.copy()
+mca_df["Condition"] = y.values
+mca_df.columns = ["Dim1", "Dim2", "Condition"]
 
-plt.figure(figsize=(10, 8))
-sns.heatmap(coords_sorted, cmap="coolwarm", center=0, annot=True)
-plt.title("MCA - Column Coordinates (Loadings)")
-plt.tight_layout()
-plt.show()
-
-
+st.subheader("MCA - Dim1 vs Dim2")
+fig, ax = plt.subplots(figsize=(8, 6))
+sns.scatterplot(data=mca_df, x="Dim1", y="Dim2", hue="Condition", palette="Set1", alpha=0.8, ax=ax)
+ax.set_title("MCA - Dim1 vs Dim2")
+ax.set_xlabel("Dim1")
+ax.set_ylabel("Dim2")
+st.pyplot(fig)
 
 
 
