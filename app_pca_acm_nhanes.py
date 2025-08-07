@@ -320,7 +320,7 @@ class MCA_Transformer(BaseEstimator, TransformerMixin):
 categorical_pipeline = Pipeline(steps=[
     ("imputer", SimpleImputer(strategy="most_frequent")),
     ("encoder", OneHotEncoder(handle_unknown="ignore", sparse_output=False)),
-    ("mca", MCA_Transformer(n_components=6))
+    ("pca", PCA(n_components=6))
 ])
 
 # Fit + transform para datos categóricos
