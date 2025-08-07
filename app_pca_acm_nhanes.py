@@ -229,6 +229,8 @@ if df.empty:
 st.subheader("Preview of Filtered Data")
 st.dataframe(df.head(10))
 
+df = df.astype({col: "str" for col in df.select_dtypes(include="object").columns})
+
 st.subheader("🔍 Column Type Checker")
 
 # Mostrar tipos de datos
