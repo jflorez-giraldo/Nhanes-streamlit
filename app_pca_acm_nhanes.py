@@ -424,7 +424,7 @@ cv = 5  # número de folds
 with st.expander("1️⃣ Selección basada en modelos (Random Forest)"):
     model = RandomForestClassifier(random_state=42)
     model.fit(X_train, y_train)
-    importances = pd.Series(model.feature_importances_, index=X_train.columns).sort_values(ascending=False)
+    importances = pd.Series(model.feature_importances_, index=X.columns).sort_values(ascending=False)
 
     st.subheader("Importancia de variables")
     fig, ax = plt.subplots(figsize=(8, 5))
@@ -445,11 +445,11 @@ with st.expander("2️⃣ Selección por filtrado (Chi2 / ANOVA)"):
     try:
         selector = SelectKBest(score_func=chi2, k=7)
         selector.fit(X_train, y_train)
-        scores_filter = pd.Series(selector.scores_, index=X_train.columns).sort_values(ascending=False)
+        scores_filter = pd.Series(selector.scores_, index=X.columns).sort_values(ascending=False)
     except ValueError:
         selector = SelectKBest(score_func=f_classif, k=7)
         selector.fit(X_train, y_train)
-        scores_filter = pd.Series(selector.scores_, index=X_train.columns).sort_values(ascending=False)
+        scores_filter = pd.Series(selector.scores_, index=X.columns).sort_values(ascending=False)
 
     st.subheader("Top 7 Variables - Filtrado")
     fig, ax = plt.subplots(figsize=(8, 5))
@@ -466,7 +466,7 @@ with st.expander("3️⃣ Selección por envoltura (RFE con Regresión Logístic
     logistic = LogisticRegression(max_iter=500, solver='liblinear')
     rfe = RFE(estimator=logistic, n_features_to_select=7)
     rfe.fit(X_train, y_train)
-    ranking = pd.Series(rfe.ranking_, index=X_train.columns)
+    ranking = pd.Series(rfe.ranking_, index=X.columns)
     selected_features = ranking[ranking == 1].index
 
     st.subheader("Variables seleccionadas (Top 7)")
