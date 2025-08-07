@@ -315,7 +315,7 @@ class MCA_Transformer(BaseEstimator, TransformerMixin):
         df_encoded = pd.DataFrame(X_encoded, columns=self.columns_)
 
         # MCA con la librería 'mca'
-        self.mca_result_ = mca.MCA(df_encoded, ncols=len(df_encoded.columns))
+        self.mca_result_ = MCA(df_encoded)
 
         return self
 
