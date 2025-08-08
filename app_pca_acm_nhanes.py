@@ -362,6 +362,30 @@ fig, ax = plt.subplots(figsize=(10, 12))
 sns.heatmap(loadings_df_sorted, annot=True, cmap="coolwarm", center=0, ax=ax)
 st.pyplot(fig)
 
+st.markdown("""
+### ¿Qué es el Análisis de Correspondencias Múltiples (MCA)?
+
+El Análisis de Correspondencias Múltiples (MCA) es una técnica estadística exploratoria utilizada para analizar y visualizar datos categóricos. Es una extensión del Análisis de Correspondencias Simple (CA) cuando hay más de dos variables categóricas.
+
+**Objetivos principales del MCA:**
+
+- **Reducir la dimensionalidad** de datos categóricos complejos.
+- **Identificar patrones** y relaciones entre categorías de variables.
+- **Visualizar** asociaciones entre individuos y categorías en un espacio de menor dimensión.
+
+**¿Cómo funciona?**
+
+El MCA transforma las variables categóricas en un espacio numérico, similar al Análisis de Componentes Principales (PCA) para variables numéricas. Luego, representa las observaciones y categorías en un mapa factorial bidimensional o tridimensional, donde la proximidad entre puntos indica similitudes.
+
+**Aplicaciones comunes:**
+
+- Encuestas y estudios sociales con muchas variables categóricas.
+- Análisis de perfiles de consumidores.
+- Estudios epidemiológicos para agrupar características clínicas o sociodemográficas.
+
+En resumen, MCA es una herramienta poderosa para explorar y resumir grandes conjuntos de datos categóricos y facilita la interpretación visual de relaciones complejas.
+""")
+
 # Pipeline para MCA con prince
 categorical_pipeline = Pipeline(steps=[
     ("imputer", SimpleImputer(strategy="most_frequent")),
@@ -395,29 +419,7 @@ st.pyplot(fig)
 # ======================
 # HEATMAP DE CONTRIBUCIONES EN MCA
 # ======================
-st.markdown("""
-### ¿Qué es el Análisis de Correspondencias Múltiples (MCA)?
 
-El Análisis de Correspondencias Múltiples (MCA) es una técnica estadística exploratoria utilizada para analizar y visualizar datos categóricos. Es una extensión del Análisis de Correspondencias Simple (CA) cuando hay más de dos variables categóricas.
-
-**Objetivos principales del MCA:**
-
-- **Reducir la dimensionalidad** de datos categóricos complejos.
-- **Identificar patrones** y relaciones entre categorías de variables.
-- **Visualizar** asociaciones entre individuos y categorías en un espacio de menor dimensión.
-
-**¿Cómo funciona?**
-
-El MCA transforma las variables categóricas en un espacio numérico, similar al Análisis de Componentes Principales (PCA) para variables numéricas. Luego, representa las observaciones y categorías en un mapa factorial bidimensional o tridimensional, donde la proximidad entre puntos indica similitudes.
-
-**Aplicaciones comunes:**
-
-- Encuestas y estudios sociales con muchas variables categóricas.
-- Análisis de perfiles de consumidores.
-- Estudios epidemiológicos para agrupar características clínicas o sociodemográficas.
-
-En resumen, MCA es una herramienta poderosa para explorar y resumir grandes conjuntos de datos categóricos y facilita la interpretación visual de relaciones complejas.
-""")
 
 st.subheader("🔍 Contribuciones de las Variables Categóricas al MCA")
 
