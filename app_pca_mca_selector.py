@@ -250,100 +250,102 @@ else:
 # ==============================
 # TRAIN / TEST SPLIT ANTES DE PCA y MCA
 # ==============================
-from sklearn.model_selection import train_test_split
+# 1️⃣ Eliminar filas con NaN en Condition
+df = df.dropna(subset=["Condition"])
 
-# Evitar que la variable objetivo esté en X
-if "Condition" in df.columns:
-    X_df = df.drop(columns=["Condition"])  # todas las features
-    y_df = df["Condition"]                 # variable objetivo
-else:
-    st.error("No se encontró la columna 'Condition' en el dataset.")
-    st.stop()
+# --- 2. Separar X (features) y y (target) ---
+X_df = df.drop(columns=["Condition"])
+y_df = df["Condition"]
 
-# División de train/test
-test_size_value = st.sidebar.slider(
-    "Test size (proporción de datos para prueba)",
-    min_value=0.1,
-    max_value=0.5,
-    value=0.2,
-    step=0.05
+# --- 3. Identificar variables numéricas y categóricas ---
+numeric_features = X_df.select_dtypes(include=["int64", "float64"]).columns.tolist()
+categorical_features = X_df.select_dtypes(include=["object", "category", "bool"]).columns.tolist()
+
+# --- 4. Pipelines de imputación y escalado ---
+numeric_transformer = Pipeline(steps=[
+    ("imputer", SimpleImputer(strategy="mean")),
+    ("scaler", StandardScaler())
+])
+
+categorical_transformer = Pipeline(steps=[
+    ("imputer", SimpleImputer(strategy="most_frequent")),
+    ("encoder", OneHotEncoder(handle_unknown="ignore"))
+])
+
+# --- 5. Preprocesador general ---
+preprocessor = ColumnTransformer(
+    transformers=[
+        ("num", numeric_transformer, numeric_features),
+        ("cat", categorical_transformer, categorical_features)
+    ]
 )
 
-random_state_value = st.sidebar.number_input(
-    "Random State (para reproducibilidad)",
-    min_value=0,
-    max_value=9999,
-    value=42
-)
-
+# --- 6. Separar datos en train y test antes de PCA/MCA ---
 X_train, X_test, y_train, y_test = train_test_split(
-    X_df, y_df,
-    test_size=test_size_value,
-    random_state=random_state_value,
-    stratify=y_df
+    X_df, y_df, test_size=0.2, random_state=42, stratify=y_df
 )
 
 # Mostrar info de división
 st.write(f"Datos de entrenamiento: {X_train.shape[0]} filas")
 st.write(f"Datos de prueba: {X_test.shape[0]} filas")
 
-# Usar X_train para PCA/MCA y selección de variables
-X_for_analysis = X_train.copy()
-y_for_analysis = y_train.copy()
+# --- 7. Transformar datos (sin PCA/MCA todavía) ---
+# Ajustar el preprocesador
+preprocessor.fit(X_train)
 
-# Detección automática de variables categóricas
-categorical_features = [col for col in X_for_analysis.columns 
-                    if X_for_analysis[col].dtype == 'object' or 
-                       X_for_analysis[col].dtype == 'string' or 
-                       X_for_analysis[col].nunique() <= 10]
+X_train_processed = preprocessor.fit_transform(X_train)
+X_test_processed = preprocessor.transform(X_test)
 
-numeric_features = X_for_analysis.select_dtypes(include=["float64", "int64"]).columns.tolist()
-if 'Condition' in numeric_features:
-    numeric_features.remove('Condition')
+# Obtener datos numéricos procesados
+num_data_train = preprocessor.named_transformers_['num'].transform(X_train[numeric_features])
+num_data_test = preprocessor.named_transformers_['num'].transform(X_test[numeric_features])
 
-X_num = df[numeric_features]
-X_cat = df[categorical_features]
+# Obtener datos categóricos procesados
+cat_data_train = preprocessor.named_transformers_['cat'].transform(X_train[categorical_features])
+cat_data_test = preprocessor.named_transformers_['cat'].transform(X_test[categorical_features])
 
-# Pipeline con imputación, escalado y PCA
-numeric_pipeline = Pipeline(steps=[
-    ("imputer", SimpleImputer(strategy="median")),
-    ("scaler", StandardScaler()),
-    ("pca", PCA(n_components=6))
-])
-X_num_pca = numeric_pipeline.fit_transform(X_num)
+# PCA sobre numéricas
+from sklearn.decomposition import PCA
+pca = PCA(n_components=7)
+X_train_pca = pca.fit_transform(num_data_train)
+X_test_pca = pca.transform(num_data_test)
 
-# DataFrame con componentes
-pca_df = pd.DataFrame(X_num_pca, columns=[f"PC{i+1}" for i in range(6)])
-pca_df["Condition"] = y.values
+pca = PCA(n_components=2)  # si quieres todas, usa n_components=None
+X_pca = pca.fit_transform(X_train_processed)
 
-# Gráfico PCA PC1 vs PC2
-st.subheader("PCA - PC1 vs PC2")
-fig, ax = plt.subplots(figsize=(8, 6))
-sns.scatterplot(data=pca_df, x="PC1", y="PC2", hue="Condition", palette="Set2", alpha=0.8, ax=ax)
-ax.set_title("PCA - PC1 vs PC2")
-ax.set_xlabel("PC1")
-ax.set_ylabel("PC2")
-st.pyplot(fig)
+# Crear DataFrame con resultados
+pca_df = pd.DataFrame(X_pca, columns=['PC1', 'PC2'])
+pca_df['condition'] = y_train.values  # color por la variable objetivo
 
-# Obtener los loadings del PCA (componentes * características)
-loadings = numeric_pipeline.named_steps["pca"].components_
+# --- 1. Scatterplot PC1 vs PC2 ---
+plt.figure(figsize=(8,6))
+sns.scatterplot(data=pca_df, x='PC1', y='PC2', hue='condition', palette='viridis', alpha=0.7)
+plt.title('PCA - PC1 vs PC2')
+plt.xlabel(f'PC1 ({pca.explained_variance_ratio_[0]*100:.1f}% varianza)')
+plt.ylabel(f'PC2 ({pca.explained_variance_ratio_[1]*100:.1f}% varianza)')
+plt.legend(title='Condition')
+plt.tight_layout()
+plt.show()
 
-# Convertir a DataFrame con nombres de columnas
-loadings_df = pd.DataFrame(
-    loadings,
-    columns=X_num.columns,
-    index=[f"PC{i+1}" for i in range(loadings.shape[0])]
-).T  # Transponer para que columnas sean PCs y filas las variables
+## Obtener los loadings del PCA (componentes * características)
+#loadings = X_pca.named_steps["pca"].components_
 
-# Ordenar las filas por la importancia de la variable en la suma de cuadrados de los componentes
-# Esto agrupa por aquellas variables con mayor contribución total
-loading_magnitude = (loadings_df**2).sum(axis=1)
-loadings_df["Importance"] = loading_magnitude
-loadings_df_sorted = loadings_df.sort_values(by="Importance", ascending=False).drop(columns="Importance")
+## Convertir a DataFrame con nombres de columnas
+#loadings_df = pd.DataFrame(
+#    loadings,
+#    columns=X_num.columns,
+#    index=[f"PC{i+1}" for i in range(loadings.shape[0])]
+#).T  # Transponer para que columnas sean PCs y filas las variables
 
-# Graficar heatmap ordenado
-st.subheader("🔍 Heatmap de Loadings del PCA (Componentes Principales)")
+## Ordenar las filas por la importancia de la variable en la suma de cuadrados de los componentes
+## Esto agrupa por aquellas variables con mayor contribución total
+#loading_magnitude = (loadings_df**2).sum(axis=1)
+#loadings_df["Importance"] = loading_magnitude
+#loadings_df_sorted = loadings_df.sort_values(by="Importance", ascending=False).drop(columns="Importance")
 
-fig, ax = plt.subplots(figsize=(10, 12))
-sns.heatmap(loadings_df_sorted, annot=True, cmap="coolwarm", center=0, ax=ax)
-st.pyplot(fig)
+## Graficar heatmap ordenado
+#st.subheader("🔍 Heatmap de Loadings del PCA (Componentes Principales)")
+
+#fig, ax = plt.subplots(figsize=(10, 12))
+#sns.heatmap(loadings_df_sorted, annot=True, cmap="coolwarm", center=0, ax=ax)
+#st.pyplot(fig)
