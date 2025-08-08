@@ -369,9 +369,9 @@ st.pyplot(fig)
 x_num = df.select_dtypes(include=["float64", "int64"]).drop(columns=["SEQN"], errors="ignore")
 x_cat = df.select_dtypes(include=["object", "category", "bool", "string"])
 
-# Guardar nombres
-num_features = X_num.columns.tolist()
-cat_features = X_cat.columns.tolist()
+# Guardar nombres originales
+num_features = x_num.columns.tolist()
+cat_features = x_cat.columns.tolist()
 
 # Preprocesadores
 numeric_transformer = Pipeline(steps=[
@@ -390,108 +390,78 @@ preprocessor = ColumnTransformer(transformers=[
     ("cat", categorical_transformer, cat_features)
 ])
 
-# Aplicar transformación
-# Ajustar preprocesador antes de usar el encoder
+# Ajustar y transformar
 preprocessor.fit(df)
 
-# Obtener nombres de columnas después del preprocesamiento
-cat_encoded_columns = preprocessor.named_transformers_["cat"]["encoder"].get_feature_names_out(cat_features)
+# Obtener nombres después del preprocesamiento
+cat_encoded_columns = preprocessor.named_transformers_["cat"].named_steps["encoder"].get_feature_names_out(cat_features)
+feature_names = np.concatenate([num_features, cat_encoded_columns])
 
-# Transformar los datos después de obtener los nombres
+# Transformar el dataset
 X = preprocessor.transform(df)
-
-X_columns = np.concatenate([num_features, cat_encoded_columns])
-X_df = pd.DataFrame(X, columns=X_columns)
+X_df = pd.DataFrame(X, columns=feature_names)
 
 # ======================
-# 🔍 Sección de selección de variables
+# 🔍 Selección de Variables
 # ======================
+st.header("🔍 Selección de Variables")
 
-st.header("🔍 Selección de Variables con Validación Cruzada")
-
-# ============================
-# 1️⃣ Separación estratificada
-# ============================
-# Separar variables predictoras y objetivo ANTES de codificar
-st.write("X_df columns:", X_df.columns.tolist())
-
+# Variable objetivo
 y = df["Condition"]
 
-# Transformar df
-#X_encoded = preprocessor.transform(df)
-
-# Luego separar train/test
+# Train/Test split
 from sklearn.model_selection import train_test_split
 X_train, X_test, y_train, y_test = train_test_split(
-    X, y, test_size=0.2, stratify=y, random_state=42
+    X_df, y, test_size=0.2, stratify=y, random_state=42
 )
 
-cv = 5  # número de folds
-
 # ============================
-# 2️⃣ Selección basada en modelos
+# 1️⃣ Selección basada en modelos
 # ============================
 with st.expander("1️⃣ Selección basada en modelos (Random Forest)"):
     model = RandomForestClassifier(random_state=42)
     model.fit(X_train, y_train)
-    importances = pd.Series(model.feature_importances_, index=X.columns).sort_values(ascending=False)
+    importances = pd.Series(model.feature_importances_, index=feature_names).sort_values(ascending=False)
 
     st.subheader("Importancia de variables")
     fig, ax = plt.subplots(figsize=(8, 5))
     sns.barplot(x=importances.head(7), y=importances.head(7).index, ax=ax)
-    ax.set_xlabel("Importancia")
-    ax.set_ylabel("Variable")
-    ax.set_title("Top 7 Variables - Random Forest")
     st.pyplot(fig)
 
-    scores = cross_val_score(model, X_train, y_train, cv=cv)
-    st.write("Precisión promedio (CV):", np.round(scores.mean(), 3))
+    st.write("Precisión en test:", np.round(model.score(X_test, y_test), 3))
 
 # ============================
-# 3️⃣ Selección por filtrado
+# 2️⃣ Selección por filtrado
 # ============================
 with st.expander("2️⃣ Selección por filtrado (Chi2 / ANOVA)"):
-    # Usar ANOVA si hay valores negativos o no escalados
     try:
         selector = SelectKBest(score_func=chi2, k=7)
         selector.fit(X_train, y_train)
-        scores_filter = pd.Series(selector.scores_, index=X.columns).sort_values(ascending=False)
+        scores_filter = pd.Series(selector.scores_, index=feature_names).sort_values(ascending=False)
     except ValueError:
         selector = SelectKBest(score_func=f_classif, k=7)
         selector.fit(X_train, y_train)
-        scores_filter = pd.Series(selector.scores_, index=X.columns).sort_values(ascending=False)
+        scores_filter = pd.Series(selector.scores_, index=feature_names).sort_values(ascending=False)
 
-    st.subheader("Top 7 Variables - Filtrado")
     fig, ax = plt.subplots(figsize=(8, 5))
     sns.barplot(x=scores_filter.head(7), y=scores_filter.head(7).index, ax=ax)
-    ax.set_xlabel("Score")
-    ax.set_ylabel("Variable")
-    ax.set_title("Selección por Filtrado")
     st.pyplot(fig)
 
 # ============================
-# 4️⃣ Selección por envoltura
+# 3️⃣ Selección por envoltura
 # ============================
 with st.expander("3️⃣ Selección por envoltura (RFE con Regresión Logística)"):
     logistic = LogisticRegression(max_iter=500, solver='liblinear')
     rfe = RFE(estimator=logistic, n_features_to_select=7)
     rfe.fit(X_train, y_train)
-    ranking = pd.Series(rfe.ranking_, index=X.columns)
-    selected_features = ranking[ranking == 1].index
+    selected_features = X_train.columns[rfe.support_]
 
-    st.subheader("Variables seleccionadas (Top 7)")
-    st.write(selected_features.tolist())
+    st.write("Variables seleccionadas:", selected_features.tolist())
 
-    # Importancia usando coeficientes
     coefs = pd.Series(logistic.fit(X_train[selected_features], y_train).coef_[0], index=selected_features)
     fig, ax = plt.subplots(figsize=(8, 5))
     sns.barplot(x=coefs, y=coefs.index, ax=ax)
-    ax.set_xlabel("Coeficiente")
-    ax.set_ylabel("Variable")
-    ax.set_title("Importancia - RFE")
     st.pyplot(fig)
-
-
 
 
 
