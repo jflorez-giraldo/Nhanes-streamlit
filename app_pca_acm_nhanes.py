@@ -330,6 +330,25 @@ X_num_pca = numeric_pipeline.fit_transform(X_num)
 pca_df = pd.DataFrame(X_num_pca, columns=[f"PC{i+1}" for i in range(6)])
 pca_df["Condition"] = y.values
 
+# Extraer el objeto PCA del pipeline
+pca = numeric_pipeline.named_steps["pca"]
+
+# Obtener la varianza explicada de cada componente
+explained_variance_ratio = pca.explained_variance_ratio_
+
+# Calcular la varianza acumulada
+cumulative_variance = np.cumsum(explained_variance_ratio)
+
+# Graficar
+fig, ax = plt.subplots(figsize=(8,5))
+ax.plot(range(1, len(cumulative_variance) + 1), cumulative_variance, marker='o', linestyle='--')
+ax.set_xlabel("Número de Componentes Principales")
+ax.set_ylabel("Varianza Acumulada")
+ax.set_title("Varianza Acumulada de las Componentes Principales")
+ax.set_xticks(range(1, len(cumulative_variance) + 1))
+ax.grid(True)
+st.pyplot(fig)
+
 # Gráfico PCA PC1 vs PC2
 st.subheader("PCA - PC1 vs PC2")
 fig, ax = plt.subplots(figsize=(8, 6))
