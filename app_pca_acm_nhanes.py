@@ -25,6 +25,40 @@ from sklearn.model_selection import train_test_split
 st.set_page_config(page_title="PCA Streamlit App", layout="wide")
 st.title("PCA and MCA Analysis with NHANES Data")
 
+st.markdown("""
+## Sobre el Dataset NHANES 2015-2016
+
+El **National Health and Nutrition Examination Survey (NHANES)** es un estudio realizado por el Centro Nacional de Estadísticas de Salud (NCHS) de Estados Unidos. Su objetivo principal es evaluar la salud y el estado nutricional de adultos y niños en la población estadounidense mediante entrevistas y exámenes físicos.
+
+### Detalles del Dataset usado:
+
+- Este conjunto de datos corresponde al ciclo **2015-2016** de NHANES.
+- Contiene variables demográficas, clínicas, de comportamiento, biométricas y de salud, tales como:
+  - Edad, sexo y raza/etnia.
+  - Medidas antropométricas: peso, altura, índice de masa corporal (IMC), circunferencia de cintura.
+  - Mediciones de presión arterial.
+  - Información sobre consumo de alcohol y tabaco.
+  - Datos sobre educación, estado civil y nivel socioeconómico.
+- Este dataset es utilizado para analizar condiciones de salud como hipertensión, diabetes y niveles altos de colesterol, entre otros.
+
+### Propósito del Análisis en esta App:
+
+- Clasificar a los participantes en grupos de salud: **hipertensión**, **diabetes**, **alto colesterol** y **saludable**, basados en indicadores clínicos.
+- Realizar un análisis exploratorio con técnicas de reducción de dimensionalidad como:
+  - PCA (Análisis de Componentes Principales) para variables numéricas.
+  - MCA (Análisis de Correspondencias Múltiples) para variables categóricas.
+- Seleccionar las variables más relevantes para la clasificación usando técnicas estadísticas y de machine learning.
+
+### Importancia:
+
+NHANES es un recurso valioso para investigadores, médicos y políticas públicas que buscan entender factores de riesgo y prevalencia de enfermedades crónicas en la población estadounidense. Este análisis ayuda a identificar patrones clave en los datos que pueden guiar intervenciones de salud.
+
+---
+
+**Fuente:** [NHANES 2015-2016](https://wwwn.cdc.gov/nchs/nhanes/continuousnhanes/default.aspx?BeginYear=2015)
+""")
+
+
 @st.cache_data
 def load_data():
     url = "https://raw.githubusercontent.com/jflorez-giraldo/Nhanes-streamlit/main/nhanes_2015_2016.csv"
