@@ -395,7 +395,7 @@ st.pyplot(fig)
 # ======================
 # HEATMAP DE CONTRIBUCIONES EN MCA
 # ======================
-
+st.markdown("""
 ### ¿Qué es el Análisis de Correspondencias Múltiples (MCA)?
 
 El Análisis de Correspondencias Múltiples (MCA) es una técnica estadística exploratoria utilizada para analizar y visualizar datos categóricos. Es una extensión del Análisis de Correspondencias Simple (CA) cuando hay más de dos variables categóricas.
@@ -417,6 +417,7 @@ El MCA transforma las variables categóricas en un espacio numérico, similar al
 - Estudios epidemiológicos para agrupar características clínicas o sociodemográficas.
 
 En resumen, MCA es una herramienta poderosa para explorar y resumir grandes conjuntos de datos categóricos y facilita la interpretación visual de relaciones complejas.
+""")
 
 st.subheader("🔍 Contribuciones de las Variables Categóricas al MCA")
 
