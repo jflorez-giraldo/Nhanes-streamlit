@@ -307,6 +307,23 @@ X_num_pca = numeric_pipeline.fit_transform(X_num)
 pca_df = pd.DataFrame(X_num_pca, columns=[f"PC{i+1}" for i in range(6)])
 pca_df["Condition"] = y.values
 
+#pca = PCA(n_components=7)
+#pca.fit(X_num)
+
+explained_variance_ratio = X_num_pca.explained_variance_ratio_
+cumulative_variance = np.cumsum(explained_variance_ratio)
+
+fig, ax = plt.subplots(figsize=(8, 5))
+sns.lineplot(x=range(1, 8), y=cumulative_variance, marker='o', ax=ax)
+ax.set_xticks(range(1, 8))
+ax.set_ylim(0, 1.05)
+ax.set_xlabel('Número de Componentes Principales')
+ax.set_ylabel('Varianza Explicada Acumulada')
+ax.set_title('Varianza Explicada Acumulada por las Primeras 7 Componentes Principales')
+ax.grid(True)
+
+st.pyplot(fig)
+
 st.markdown("""
 ## ¿Qué es el Análisis de Componentes Principales (PCA)?
 
