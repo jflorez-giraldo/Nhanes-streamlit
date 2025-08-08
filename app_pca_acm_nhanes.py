@@ -418,8 +418,8 @@ st.write("X_df columns:", X_df.columns.tolist())
 #X = X_df.drop(columns=["Condition"])  # quitar la variable objetivo
 y = df["Condition"]
 
-# Codificar sólo X
-X_encoded = pd.get_dummies(X, drop_first=True)
+# Obtener datos ya codificados y escalados
+X_encoded = pipeline.transform(X)
 
 # Luego separar train/test
 from sklearn.model_selection import train_test_split
