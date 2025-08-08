@@ -314,8 +314,6 @@ El **Análisis de Componentes Principales (PCA)** es una técnica estadística u
 - Para identificar cuáles variables contribuyen más a la variabilidad total.
 
 ---
-
-Luego de esta explicación, se mostrará el gráfico de PCA basado en los primeros dos componentes principales (PC1 y PC2).
 """)
 
 # Pipeline con imputación, escalado y PCA
@@ -357,6 +355,53 @@ ax.set_title("PCA - PC1 vs PC2")
 ax.set_xlabel("PC1")
 ax.set_ylabel("PC2")
 st.pyplot(fig)
+
+st.markdown("""
+### ¿Qué son los Loadings en PCA?
+
+En el Análisis de Componentes Principales (PCA), los **loadings** (o cargas factoriales) representan la relación entre las variables originales y las componentes principales.
+
+---
+
+### Cómo se calculan
+
+PCA busca nuevas variables llamadas **componentes principales**, que son combinaciones lineales de las variables originales.
+
+Cada componente principal \( PC_j \) se define como:
+
+\[
+PC_j = a_{1j} x_1 + a_{2j} x_2 + \cdots + a_{pj} x_p
+\]
+
+donde:
+
+- \( x_1, x_2, \ldots, x_p \) son las variables originales (normalizadas si se aplica escalado),
+- \( a_{ij} \) son los coeficientes o **loadings** de la variable \( i \) en la componente \( j \).
+
+---
+
+### Interpretación
+
+- El loading \( a_{ij} \) indica **cuánto aporta** la variable \( i \) a la componente principal \( j \).
+- Valores altos (en valor absoluto) significan que esa variable influye fuertemente en la componente.
+- El signo indica la dirección de la relación (positiva o negativa).
+
+---
+
+### Cálculo práctico
+
+- Los loadings corresponden a los **autovectores** (vectores propios) de la matriz de covarianza o correlación de los datos.
+- En `scikit-learn`, el atributo `components_` del objeto PCA contiene estos loadings:  
+  - Cada fila es una componente principal,  
+  - Cada columna es una variable original.
+
+---
+
+### Usos
+
+- Analizar los loadings ayuda a interpretar qué variables definen cada componente.
+- También es útil para seleccionar variables importantes según su contribución.
+""")
 
 # Obtener los loadings del PCA (componentes * características)
 loadings = numeric_pipeline.named_steps["pca"].components_
