@@ -307,6 +307,29 @@ X_num_pca = numeric_pipeline.fit_transform(X_num)
 pca_df = pd.DataFrame(X_num_pca, columns=[f"PC{i+1}" for i in range(6)])
 pca_df["Condition"] = y.values
 
+st.markdown("""
+## ¿Qué es el Análisis de Componentes Principales (PCA)?
+
+El **Análisis de Componentes Principales (PCA)** es una técnica estadística usada para reducir la dimensionalidad de grandes conjuntos de datos con muchas variables numéricas, manteniendo la mayor cantidad posible de la variabilidad original.
+
+### ¿Cómo funciona?
+
+- PCA transforma las variables originales en un nuevo conjunto de variables no correlacionadas llamadas **componentes principales**.
+- Cada componente principal es una combinación lineal de las variables originales.
+- Los primeros componentes capturan la mayor parte de la variabilidad en los datos.
+- Esto permite visualizar y analizar datos complejos en menos dimensiones, facilitando la interpretación.
+
+### ¿Por qué usamos PCA en este análisis?
+
+- Para explorar patrones y agrupamientos en las variables numéricas del dataset NHANES.
+- Para visualizar relaciones entre individuos y variables de forma simplificada.
+- Para identificar cuáles variables contribuyen más a la variabilidad total.
+
+---
+
+Luego de esta explicación, se mostrará el gráfico de PCA basado en los primeros dos componentes principales (PC1 y PC2).
+""")
+
 # Gráfico PCA PC1 vs PC2
 st.subheader("PCA - PC1 vs PC2")
 fig, ax = plt.subplots(figsize=(8, 6))
