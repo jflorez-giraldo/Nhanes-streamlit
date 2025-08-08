@@ -415,11 +415,10 @@ st.header("🔍 Selección de Variables con Validación Cruzada")
 # Separar variables predictoras y objetivo ANTES de codificar
 st.write("X_df columns:", X_df.columns.tolist())
 
-#X = X_df.drop(columns=["Condition"])  # quitar la variable objetivo
 y = df["Condition"]
 
-# Obtener datos ya codificados y escalados
-X_encoded = pipeline.transform(X)
+# Transformar df
+X_encoded = preprocessor.transform(df)
 
 # Luego separar train/test
 from sklearn.model_selection import train_test_split
