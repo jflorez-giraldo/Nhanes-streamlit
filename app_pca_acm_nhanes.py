@@ -446,30 +446,6 @@ with st.expander("3️⃣ Selección por envoltura (RFE con Regresión Logístic
     sns.barplot(x=coefs, y=coefs.index, ax=ax)
     st.pyplot(fig)
     
-# ============================
-# 3️⃣ Selección por filtrado
-# ============================
-with st.expander("2️⃣ Selección por filtrado (Chi2 / ANOVA)"):
-    feature_names = X_train.columns  # Asegúrate que X_train sea DataFrame con columnas
-    
-    # Para chi2, aseguramos que no haya valores negativos (shift a 0 mínimo)
-    X_train_nonneg = X_train - X_train.min()
-
-    k = min(7, X_train.shape[1])  # no pedir más features que columnas
-
-    try:
-        selector = SelectKBest(score_func=chi2, k=k)
-        selector.fit(X_train_nonneg, y_train)
-        scores_filter = pd.Series(selector.scores_, index=feature_names).sort_values(ascending=False)
-    except ValueError:
-        selector = SelectKBest(score_func=f_classif, k=k)
-        selector.fit(X_train, y_train)
-        scores_filter = pd.Series(selector.scores_, index=feature_names).sort_values(ascending=False)
-
-    fig, ax = plt.subplots(figsize=(8, 5))
-    sns.barplot(x=scores_filter.head(k), y=scores_filter.head(k).index, ax=ax)
-    st.pyplot(fig)
-
 
 
 
