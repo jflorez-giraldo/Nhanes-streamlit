@@ -310,16 +310,16 @@ pca_df["Condition"] = y.values
 pca = PCA(n_components=7)
 pca.fit(X_num)
 
-explained_variance_ratio = pca.explained_variance_ratio_
+explained_variance_ratio = numeric_pipeline.named_steps["pca"].explained_variance_ratio_
 cumulative_variance = np.cumsum(explained_variance_ratio)
 
 fig, ax = plt.subplots(figsize=(8, 5))
-sns.lineplot(x=range(1, 8), y=cumulative_variance, marker='o', ax=ax)
-ax.set_xticks(range(1, 8))
+sns.lineplot(x=range(1, len(cumulative_variance) + 1), y=cumulative_variance, marker='o', ax=ax)
+ax.set_xticks(range(1, len(cumulative_variance) + 1))
 ax.set_ylim(0, 1.05)
 ax.set_xlabel('Número de Componentes Principales')
 ax.set_ylabel('Varianza Explicada Acumulada')
-ax.set_title('Varianza Explicada Acumulada por las Primeras 7 Componentes Principales')
+ax.set_title('Varianza Explicada Acumulada por Componentes Principales')
 ax.grid(True)
 
 st.pyplot(fig)
