@@ -322,12 +322,12 @@ Luego de esta explicación, se mostrará el gráfico de PCA basado en los primer
 numeric_pipeline = Pipeline(steps=[
     ("imputer", SimpleImputer(strategy="median")),
     ("scaler", StandardScaler()),
-    ("pca", PCA(n_components=6))
+    ("pca", PCA(n_components=15))
 ])
 X_num_pca = numeric_pipeline.fit_transform(X_num)
 
 # DataFrame con componentes
-pca_df = pd.DataFrame(X_num_pca, columns=[f"PC{i+1}" for i in range(6)])
+pca_df = pd.DataFrame(X_num_pca, columns=[f"PC{i+1}" for i in range(15)])
 pca_df["Condition"] = y.values
 
 # Extraer el objeto PCA del pipeline
