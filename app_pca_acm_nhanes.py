@@ -307,10 +307,10 @@ X_num_pca = numeric_pipeline.fit_transform(X_num)
 pca_df = pd.DataFrame(X_num_pca, columns=[f"PC{i+1}" for i in range(6)])
 pca_df["Condition"] = y.values
 
-#pca = PCA(n_components=7)
-#pca.fit(X_num)
+pca = PCA(n_components=7)
+pca.fit(X_num)
 
-explained_variance_ratio = X_num_pca.explained_variance_ratio_
+explained_variance_ratio = pca.explained_variance_ratio_
 cumulative_variance = np.cumsum(explained_variance_ratio)
 
 fig, ax = plt.subplots(figsize=(8, 5))
