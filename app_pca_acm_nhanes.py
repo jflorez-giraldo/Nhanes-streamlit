@@ -418,12 +418,12 @@ st.write("X_df columns:", X_df.columns.tolist())
 y = df["Condition"]
 
 # Transformar df
-X_encoded = preprocessor.transform(df)
+#X_encoded = preprocessor.transform(df)
 
 # Luego separar train/test
 from sklearn.model_selection import train_test_split
 X_train, X_test, y_train, y_test = train_test_split(
-    X_encoded, y, test_size=0.2, stratify=y, random_state=42
+    X, y, test_size=0.2, stratify=y, random_state=42
 )
 
 cv = 5  # número de folds
