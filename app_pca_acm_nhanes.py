@@ -431,7 +431,23 @@ with st.expander("1️⃣ Selección basada en modelos (Random Forest)"):
     st.write("Precisión en test:", np.round(model.score(X_test, y_test), 3))
 
 # ============================
-# 3️⃣ Selección por 
+# 3️⃣ Selección por envoltura
+# ============================
+with st.expander("3️⃣ Selección por envoltura (RFE con Regresión Logística)"):
+    logistic = LogisticRegression(max_iter=500, solver='liblinear')
+    rfe = RFE(estimator=logistic, n_features_to_select=7)
+    rfe.fit(X_train, y_train)
+    selected_features = X_train.columns[rfe.support_]
+
+    st.write("Variables seleccionadas:", selected_features.tolist())
+
+    coefs = pd.Series(logistic.fit(X_train[selected_features], y_train).coef_[0], index=selected_features)
+    fig, ax = plt.subplots(figsize=(8, 5))
+    sns.barplot(x=coefs, y=coefs.index, ax=ax)
+    st.pyplot(fig)
+    
+# ============================
+# 3️⃣ Selección por filtrado
 # ============================
 with st.expander("2️⃣ Selección por filtrado (Chi2 / ANOVA)"):
     feature_names = X_train.columns  # Asegúrate que X_train sea DataFrame con columnas
@@ -454,21 +470,7 @@ with st.expander("2️⃣ Selección por filtrado (Chi2 / ANOVA)"):
     sns.barplot(x=scores_filter.head(k), y=scores_filter.head(k).index, ax=ax)
     st.pyplot(fig)
 
-# ============================
-# 3️⃣ Selección por envoltura
-# ============================
-with st.expander("3️⃣ Selección por envoltura (RFE con Regresión Logística)"):
-    logistic = LogisticRegression(max_iter=500, solver='liblinear')
-    rfe = RFE(estimator=logistic, n_features_to_select=7)
-    rfe.fit(X_train, y_train)
-    selected_features = X_train.columns[rfe.support_]
 
-    st.write("Variables seleccionadas:", selected_features.tolist())
-
-    coefs = pd.Series(logistic.fit(X_train[selected_features], y_train).coef_[0], index=selected_features)
-    fig, ax = plt.subplots(figsize=(8, 5))
-    sns.barplot(x=coefs, y=coefs.index, ax=ax)
-    st.pyplot(fig)
 
 
 
