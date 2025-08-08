@@ -367,22 +367,22 @@ En el Análisis de Componentes Principales (PCA), los **loadings** (o cargas fac
 
 PCA busca nuevas variables llamadas **componentes principales**, que son combinaciones lineales de las variables originales.
 
-Cada componente principal \( PC_j \) se define como:
+Cada componente principal $PC_j$ se define como:
 
-\[
+$$
 PC_j = a_{1j} x_1 + a_{2j} x_2 + \cdots + a_{pj} x_p
-\]
+$$
 
 donde:
 
-- \( x_1, x_2, \ldots, x_p \) son las variables originales (normalizadas si se aplica escalado),
-- \( a_{ij} \) son los coeficientes o **loadings** de la variable \( i \) en la componente \( j \).
+- $x_1, x_2, \ldots, x_p$ son las variables originales (normalizadas si se aplica escalado),
+- $a_{ij}$ son los coeficientes o **loadings** de la variable $i$ en la componente $j$.
 
 ---
 
 ### Interpretación
 
-- El loading \( a_{ij} \) indica **cuánto aporta** la variable \( i \) a la componente principal \( j \).
+- El loading $a_{ij}$ indica **cuánto aporta** la variable $i$ a la componente principal $j$.
 - Valores altos (en valor absoluto) significan que esa variable influye fuertemente en la componente.
 - El signo indica la dirección de la relación (positiva o negativa).
 
